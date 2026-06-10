@@ -1,0 +1,51 @@
+export const mockCustomers = [
+  {
+    id: 'usr-001',
+    name: 'Alex Turner',
+    email: 'alex.turner@email.com',
+    phone: '+1 416-555-0123',
+    group: 'Customers',
+    status: 'active',
+    joinedAt: '2024-02-28T11:30:00Z',
+    totalOrders: 1,
+    totalSpent: 190.80,
+    lastOrderAt: '2024-02-28T11:30:00Z',
+  },
+  {
+    id: 'usr-006',
+    name: 'Demo Customer',
+    email: 'customer@test.com',
+    phone: '+1 416-555-0001',
+    group: 'Customers',
+    status: 'active',
+    joinedAt: '2024-03-10T14:22:00Z',
+    totalOrders: 1,
+    totalSpent: 308.15,
+    lastOrderAt: '2024-03-10T14:22:00Z',
+  },
+];
+
+export const mockEmployees = [
+  {
+    id: 'emp-001',
+    name: 'Admin User',
+    email: 'admin@test.com',
+    phone: '+1 416-555-0100',
+    group: 'Admins',
+    role: 'Administrator',
+    department: 'Management',
+    status: 'active',
+    joinedAt: '2024-01-15T09:00:00Z',
+  },
+  {
+    id: 'emp-002',
+    name: 'Sofia Reyes',
+    email: 'sofia.reyes@stridelux.com',
+    phone: '+1 416-555-0201',
+    group: 'Support',
+    role: 'Customer Support Lead',
+    department: 'Customer Support',
+    status: 'active',
+    joinedAt: '2024-03-10T09:00:00Z',
+  },
+];

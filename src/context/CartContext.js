@@ -1,39 +1,32 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const savedCart = localStorage.getItem('stridelux_cart');
-      return savedCart ? JSON.parse(savedCart) : [];
+      return JSON.parse(localStorage.getItem('stridelux_cart') || '[]');
     } catch {
       return [];
     }
   });
 
+  // Persist to localStorage on every change
   useEffect(() => {
     localStorage.setItem('stridelux_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, selectedSize = 'One Size', quantity = 1) => {
+  const addToCart = useCallback((product, selectedSize = 'One Size', quantity = 1) => {
     const cartItemId = `${product.id}-${selectedSize}`;
-
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (item) => item.cartItemId === cartItemId
-      );
-
-      if (existingItem) {
-        return prevItems.map((item) =>
-          item.cartItemId === cartItemId
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
+    setCartItems((prev) => {
+      const existing = prev.find((i) => i.cartItemId === cartItemId);
+      if (existing) {
+        return prev.map((i) =>
+          i.cartItemId === cartItemId ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
-
       return [
-        ...prevItems,
+        ...prev,
         {
           cartItemId,
           id: product.id,
@@ -41,53 +34,38 @@ export function CartProvider({ children }) {
           category: product.category,
           brand: product.brand,
           price: product.price,
-          image: product.image,
+          // support both old `image` and new `thumbnail` field names
+          image: product.thumbnail || product.image,
           selectedSize,
           quantity,
         },
       ];
     });
-  };
+  }, []);
 
-  const increaseQuantity = (cartItemId) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.cartItemId === cartItemId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
+  const increaseQuantity = useCallback((cartItemId) => {
+    setCartItems((prev) =>
+      prev.map((i) => (i.cartItemId === cartItemId ? { ...i, quantity: i.quantity + 1 } : i))
+    );
+  }, []);
+
+  const decreaseQuantity = useCallback((cartItemId) => {
+    setCartItems((prev) =>
+      prev.map((i) =>
+        i.cartItemId === cartItemId && i.quantity > 1 ? { ...i, quantity: i.quantity - 1 } : i
       )
     );
-  };
+  }, []);
 
-  const decreaseQuantity = (cartItemId) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.cartItemId === cartItemId && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
-  };
+  const removeFromCart = useCallback((cartItemId) => {
+    setCartItems((prev) => prev.filter((i) => i.cartItemId !== cartItemId));
+  }, []);
 
-  const removeFromCart = (cartItemId) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.cartItemId !== cartItemId)
-    );
-  };
+  const clearCart = useCallback(() => setCartItems([]), []);
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
-
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-
-  const subtotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0
-  );
-
+  const cartCount = cartItems.reduce((sum, i) => sum + i.quantity, 0);
+  const subtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const shipping = cartItems.length > 0 ? 10 : 0;
-
   const total = subtotal + shipping;
 
   return (
@@ -111,5 +89,7 @@ export function CartProvider({ children }) {
 }
 
 export function useCart() {
-  return useContext(CartContext);
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error('useCart must be used within CartProvider');
+  return ctx;
 }
