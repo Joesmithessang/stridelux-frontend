@@ -6,9 +6,8 @@ export const USE_MOCK =
   process.env.REACT_APP_USE_MOCK === 'true' ||
   !process.env.REACT_APP_API_GATEWAY_URL;
 
-// Auth can be mocked independently of data services.
-// If REACT_APP_USE_MOCK_AUTH is not set, it follows USE_MOCK.
+// Auth is controlled solely by REACT_APP_USE_MOCK_AUTH.
+// It does NOT inherit from USE_MOCK — an unset API Gateway URL (no backend yet)
+// must not silently switch auth to mock mode in production.
 export const USE_MOCK_AUTH =
-  process.env.REACT_APP_USE_MOCK_AUTH !== undefined
-    ? process.env.REACT_APP_USE_MOCK_AUTH === 'true'
-    : USE_MOCK;
+  process.env.REACT_APP_USE_MOCK_AUTH === 'true';
