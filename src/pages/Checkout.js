@@ -19,14 +19,14 @@ const INITIAL_PAYMENT = {
 
 export default function Checkout() {
   const { cartItems, subtotal, clearCart } = useCart();
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isGuest, userAttributes } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [shipping, setShipping] = useState(
-    isAuthenticated && currentUser
-      ? { fullName: currentUser.name || '', email: currentUser.email || '', phone: currentUser.phone || '', address: '', city: '', state: '', postalCode: '', country: 'Canada' }
+    !isGuest && userAttributes
+      ? { fullName: userAttributes.name || '', email: userAttributes.email || '', phone: userAttributes.phone_number || '', address: '', city: '', state: '', postalCode: '', country: 'Canada' }
       : { ...INITIAL_SHIPPING }
   );
   const [payment, setPayment] = useState({ ...INITIAL_PAYMENT });
@@ -113,7 +113,7 @@ export default function Checkout() {
             {step === 0 && (
               <form className="checkout-form-card" onSubmit={handleShippingSubmit}>
                 <h2><FiTruck /> Shipping Information</h2>
-                {!isAuthenticated && (
+                {isGuest && (
                   <div className="guest-notice">
                     <p>Checking out as guest. <Link to="/login">Sign in</Link> to save your details.</p>
                   </div>

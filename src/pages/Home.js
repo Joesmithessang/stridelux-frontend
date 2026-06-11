@@ -24,10 +24,12 @@ export default function Home() {
   const [newArrivals, setNewArrivals] = useState([]);
 
   useEffect(() => {
-    productService.getAll({}).then((products) => {
-      setFeatured(products.filter((p) => p.tags?.includes('bestseller')).slice(0, 4));
-      setNewArrivals(products.filter((p) => p.tags?.includes('new')).slice(0, 4));
-    });
+    productService.getAll({})
+      .then((products) => {
+        setFeatured(products.filter((p) => p.tags?.includes('bestseller')).slice(0, 4));
+        setNewArrivals(products.filter((p) => p.tags?.includes('new')).slice(0, 4));
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
