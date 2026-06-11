@@ -105,6 +105,7 @@ jobs:
           REACT_APP_S3_MEDIA_URL: ${{ secrets.REACT_APP_S3_MEDIA_URL }}
           REACT_APP_STRIPE_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
           REACT_APP_USE_MOCK: 'false'
+          REACT_APP_USE_MOCK_AUTH: 'false'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
