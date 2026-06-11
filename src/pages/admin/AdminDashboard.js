@@ -14,13 +14,24 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminService.getDashboardStats().then((data) => {
-      setStats(data);
-      setLoading(false);
-    });
+    adminService.getDashboardStats()
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, []);
 
   if (loading) return <div className="admin-loading"><LoadingSpinner /></div>;
+  if (!stats)  return (
+    <div className="admin-loading">
+      <p style={{ color: '#888', textAlign: 'center' }}>
+        Dashboard data unavailable. The API may not be reachable.
+      </p>
+    </div>
+  );
 
   const STAT_CARDS = [
     { icon: <FiDollarSign />, label: 'Total Revenue', value: `$${Number(stats.totalRevenue).toLocaleString()}`, color: 'stat-green' },

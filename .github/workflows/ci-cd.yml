@@ -104,7 +104,9 @@ jobs:
           REACT_APP_API_GATEWAY_URL: ${{ secrets.REACT_APP_API_GATEWAY_URL }}
           REACT_APP_S3_MEDIA_URL: ${{ secrets.REACT_APP_S3_MEDIA_URL }}
           REACT_APP_STRIPE_PUBLISHABLE_KEY: ${{ secrets.REACT_APP_STRIPE_PUBLISHABLE_KEY }}
-          REACT_APP_USE_MOCK: 'false'
+          # Data services use mock until the real API backend is deployed.
+          # Auth is always real Cognito (independent of the data mock flag).
+          REACT_APP_USE_MOCK: 'true'
           REACT_APP_USE_MOCK_AUTH: 'false'
 
       - name: Configure AWS credentials

@@ -27,10 +27,15 @@ export default function Shop() {
 
   useEffect(() => {
     setLoading(true);
-    productService.getAll({ category, brand, sort, search }).then((data) => {
-      setProducts(data);
-      setLoading(false);
-    });
+    productService.getAll({ category, brand, sort, search })
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setProducts([]);
+        setLoading(false);
+      });
   }, [category, brand, sort, search]);
 
   const setFilter = (key, value) => {
