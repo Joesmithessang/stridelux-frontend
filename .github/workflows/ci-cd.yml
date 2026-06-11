@@ -73,7 +73,7 @@ jobs:
     # a wait timer before production deployments in repo Settings.
     environment:
       name: production
-      url: https://${{ secrets.CLOUDFRONT_DOMAIN }}
+      url: https://${{ vars.CLOUDFRONT_DOMAIN }}
 
     steps:
       - name: Checkout code
@@ -136,7 +136,7 @@ jobs:
           echo "### Deployment successful" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **URL** | https://${{ secrets.CLOUDFRONT_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | https://${{ vars.CLOUDFRONT_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
