@@ -25,7 +25,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Account() {
-  const { currentUser, isAuthenticated, logout } = useAuth();
+  const { userAttributes, isGuest, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
@@ -33,24 +33,24 @@ export default function Account() {
   const [profileForm, setProfileForm] = useState({ name: '', phone: '' });
 
   useEffect(() => {
-    if (!isAuthenticated) { navigate('/login'); return; }
-    setProfileForm({ name: currentUser?.name || '', phone: currentUser?.phone || '' });
+    if (isGuest) { navigate('/login'); return; }
+    setProfileForm({ name: userAttributes?.name || '', phone: userAttributes?.phone_number || '' });
     orderService.getMyOrders().then((data) => {
       setOrders(data);
       setLoadingOrders(false);
     });
-  }, [isAuthenticated, currentUser, navigate]);
+  }, [isGuest, userAttributes, navigate]);
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
   };
 
-  const initials = currentUser?.name
-    ? currentUser.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userAttributes?.name
+    ? userAttributes.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
-  if (!isAuthenticated) return null;
+  if (isGuest) return null;
 
   return (
     <main className="account-page">
@@ -61,9 +61,9 @@ export default function Account() {
             <div className="account-profile-card">
               <div className="account-avatar">{initials}</div>
               <div>
-                <h3>{currentUser?.name}</h3>
-                <p>{currentUser?.email}</p>
-                {currentUser?.group === 'Admins' && (
+                <h3>{userAttributes?.name}</h3>
+                <p>{userAttributes?.email}</p>
+                {isAdmin && (
                   <span className="admin-badge">Admin</span>
                 )}
               </div>
@@ -81,7 +81,7 @@ export default function Account() {
                   <FiChevronRight className="nav-chevron" />
                 </button>
               ))}
-              {currentUser?.group === 'Admins' && (
+              {isAdmin && (
                 <Link to="/admin" className="account-nav-item admin-nav-item">
                   <FiSettings /> Admin Dashboard <FiChevronRight className="nav-chevron" />
                 </Link>
@@ -180,7 +180,7 @@ export default function Account() {
                   </div>
                   <div className="form-group">
                     <label>Email Address</label>
-                    <input value={currentUser?.email || ''} disabled />
+                    <input value={userAttributes?.email || ''} disabled />
                   </div>
                   <div className="form-group">
                     <label>Phone Number</label>

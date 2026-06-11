@@ -15,12 +15,12 @@ const ADMIN_NAV = [
 ];
 
 export default function AdminLayout() {
-  const { currentUser, logout } = useAuth();
+  const { userAttributes, signOut } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     navigate('/');
   };
 
@@ -50,10 +50,10 @@ export default function AdminLayout() {
         <div className="admin-sidebar-footer">
           <div className="admin-user-chip">
             <div className="admin-user-avatar">
-              {currentUser?.name?.[0]?.toUpperCase() || 'A'}
+              {userAttributes?.name?.[0]?.toUpperCase() || 'A'}
             </div>
             <div className="admin-user-info">
-              <span>{currentUser?.name || 'Admin'}</span>
+              <span>{userAttributes?.name || 'Admin'}</span>
               <span className="admin-user-role">Administrator</span>
             </div>
           </div>

@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const { cartCount } = useCart();
-  const { isAuthenticated, isAdmin, currentUser, logout } = useAuth();
+  const { isGuest, isAdmin, userAttributes, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -48,12 +48,12 @@ function Navbar() {
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
-    await logout();
+    await signOut();
     navigate('/');
   };
 
-  const initials = currentUser?.name
-    ? currentUser.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userAttributes?.name
+    ? userAttributes.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
 
   return (
@@ -94,7 +94,7 @@ function Navbar() {
             </Link>
 
             {/* User / Auth */}
-            {isAuthenticated ? (
+            {!isGuest ? (
               <div className="user-menu-wrap" ref={userMenuRef}>
                 <button
                   className="user-avatar-btn"
@@ -108,8 +108,8 @@ function Navbar() {
                 {userMenuOpen && (
                   <div className="user-dropdown">
                     <div className="user-dropdown-header">
-                      <span className="dropdown-name">{currentUser?.name || 'Account'}</span>
-                      <span className="dropdown-email">{currentUser?.email}</span>
+                      <span className="dropdown-name">{userAttributes?.name || 'Account'}</span>
+                      <span className="dropdown-email">{userAttributes?.email}</span>
                     </div>
                     <div className="user-dropdown-divider" />
                     {isAdmin && (
@@ -183,7 +183,7 @@ function Navbar() {
             <NavLink to="/shop?category=Accessories" onClick={() => setMobileOpen(false)}>Accessories</NavLink>
             <NavLink to="/about" onClick={() => setMobileOpen(false)}>About</NavLink>
             <NavLink to="/contact" onClick={() => setMobileOpen(false)}>Contact</NavLink>
-            {isAuthenticated ? (
+            {!isGuest ? (
               <>
                 <NavLink to="/account" onClick={() => setMobileOpen(false)}>My Account</NavLink>
                 {isAdmin && <NavLink to="/admin" onClick={() => setMobileOpen(false)}>Admin Dashboard</NavLink>}

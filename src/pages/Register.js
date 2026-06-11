@@ -1,27 +1,31 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiUser, FiMail, FiLock, FiPhone, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi';
+import { FiUser, FiAtSign, FiMail, FiLock, FiPhone, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const PW_RULES = [
-  { label: 'At least 8 characters', test: (v) => v.length >= 8 },
-  { label: 'One uppercase letter', test: (v) => /[A-Z]/.test(v) },
-  { label: 'One number', test: (v) => /\d/.test(v) },
-  { label: 'One special character', test: (v) => /[!@#$%^&*]/.test(v) },
+  { label: 'At least 8 characters',  test: (v) => v.length >= 8 },
+  { label: 'One uppercase letter',    test: (v) => /[A-Z]/.test(v) },
+  { label: 'One number',              test: (v) => /\d/.test(v) },
+  { label: 'One special character',   test: (v) => /[!@#$%^&*]/.test(v) },
 ];
 
 export default function Register() {
-  const { register } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
-  const [showPw, setShowPw] = useState(false);
+  const [form, setForm] = useState({
+    username: '', name: '', email: '', phoneNumber: '', password: '', confirm: '',
+  });
+  const [showPw, setShowPw]   = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
   const pwRulePassed = PW_RULES.map((r) => r.test(form.password));
-  const pwValid = pwRulePassed.every(Boolean);
-  const pwMatch = form.password === form.confirm && form.confirm.length > 0;
+  const pwValid      = pwRulePassed.every(Boolean);
+  const pwMatch      = form.password === form.confirm && form.confirm.length > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,9 +33,9 @@ export default function Register() {
     if (!pwMatch) { toast.error('Passwords do not match'); return; }
     setLoading(true);
     try {
-      await register({ email: form.email, password: form.password, name: form.name, phone: form.phone });
-      toast.success('Account created! Welcome to STRIDELUX.');
-      navigate('/account');
+      await signUp(form);
+      toast.success('Account created! Check your email to verify.');
+      navigate('/verify', { state: { username: form.username } });
     } catch (err) {
       toast.error(err?.message || 'Registration failed. Please try again.');
     } finally {
@@ -60,10 +64,30 @@ export default function Register() {
 
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="form-group">
+                <label>Username</label>
+                <div className="input-icon-wrap">
+                  <FiAtSign className="input-icon" />
+                  <input
+                    required
+                    placeholder="janesmith"
+                    autoComplete="username"
+                    value={form.username}
+                    onChange={update('username')}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
                 <label>Full Name</label>
                 <div className="input-icon-wrap">
                   <FiUser className="input-icon" />
-                  <input required placeholder="Jane Smith" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <input
+                    required
+                    placeholder="Jane Smith"
+                    autoComplete="name"
+                    value={form.name}
+                    onChange={update('name')}
+                  />
                 </div>
               </div>
 
@@ -71,15 +95,31 @@ export default function Register() {
                 <label>Email Address</label>
                 <div className="input-icon-wrap">
                   <FiMail className="input-icon" />
-                  <input required type="email" placeholder="jane@example.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  <input
+                    required
+                    type="email"
+                    placeholder="jane@example.com"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={update('email')}
+                  />
                 </div>
               </div>
 
               <div className="form-group">
-                <label>Phone Number <span className="label-optional">(for order updates)</span></label>
+                <label>
+                  Phone Number <span className="label-optional">E.164 format — +12895550123</span>
+                </label>
                 <div className="input-icon-wrap">
                   <FiPhone className="input-icon" />
-                  <input type="tel" placeholder="+1 (416) 555-0100" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <input
+                    required
+                    type="tel"
+                    placeholder="+12895550123"
+                    autoComplete="tel"
+                    value={form.phoneNumber}
+                    onChange={update('phoneNumber')}
+                  />
                 </div>
               </div>
 
@@ -91,8 +131,9 @@ export default function Register() {
                     required
                     type={showPw ? 'text' : 'password'}
                     placeholder="Create a strong password"
+                    autoComplete="new-password"
                     value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onChange={update('password')}
                   />
                   <button type="button" className="pw-toggle" onClick={() => setShowPw(!showPw)}>
                     {showPw ? <FiEyeOff /> : <FiEye />}
@@ -117,8 +158,9 @@ export default function Register() {
                     required
                     type={showPw ? 'text' : 'password'}
                     placeholder="Repeat your password"
+                    autoComplete="new-password"
                     value={form.confirm}
-                    onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                    onChange={update('confirm')}
                     className={form.confirm && !pwMatch ? 'input-error' : form.confirm && pwMatch ? 'input-ok' : ''}
                   />
                 </div>
@@ -126,7 +168,7 @@ export default function Register() {
 
               <label className="terms-label">
                 <input type="checkbox" required />
-                I agree to the <Link to="/contact#terms">Terms of Service</Link> and <Link to="/contact#privacy">Privacy Policy</Link>
+                I agree to the <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>
               </label>
 
               <button type="submit" className="btn btn-primary btn-full" disabled={loading}>

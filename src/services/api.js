@@ -28,7 +28,12 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
-    return Promise.reject(error.response?.data || { message: error.message });
+    const message =
+      error.response?.data?.message ||
+      (typeof error.response?.data === 'string' ? error.response.data : null) ||
+      error.message ||
+      'An unexpected error occurred';
+    return Promise.reject(new Error(message));
   }
 );
 
