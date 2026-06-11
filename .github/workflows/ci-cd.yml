@@ -13,6 +13,10 @@ on:
 
 env:
   NODE_VERSION: '20'
+  # Opt into Node.js 24 for action runners ahead of the June 16 forced migration.
+  # This affects only how actions/checkout and actions/setup-node themselves run,
+  # not the Node.js version used to build the project (controlled by NODE_VERSION).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ── Job 1: CI ─────────────────────────────────────────────
@@ -34,7 +38,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
@@ -73,7 +77,7 @@ jobs:
     # a wait timer before production deployments in repo Settings.
     environment:
       name: production
-      url: https://${{ secrets.CLOUDFRONT_DOMAIN }}
+      url: https://${{ vars.CLOUDFRONT_DOMAIN }}
 
     steps:
       - name: Checkout code
@@ -86,7 +90,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # Production build with real AWS credentials injected
       # from GitHub Secrets — .env is never committed to the repo.
@@ -136,7 +140,7 @@ jobs:
           echo "### Deployment successful" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| **URL** | https://${{ secrets.CLOUDFRONT_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | https://${{ vars.CLOUDFRONT_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
