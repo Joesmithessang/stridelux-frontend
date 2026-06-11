@@ -13,6 +13,10 @@ on:
 
 env:
   NODE_VERSION: '20'
+  # Opt into Node.js 24 for action runners ahead of the June 16 forced migration.
+  # This affects only how actions/checkout and actions/setup-node themselves run,
+  # not the Node.js version used to build the project (controlled by NODE_VERSION).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ── Job 1: CI ─────────────────────────────────────────────
@@ -34,7 +38,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
@@ -86,7 +90,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # Production build with real AWS credentials injected
       # from GitHub Secrets — .env is never committed to the repo.
