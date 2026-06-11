@@ -35,10 +35,15 @@ export default function Account() {
   useEffect(() => {
     if (isGuest) { navigate('/login'); return; }
     setProfileForm({ name: userAttributes?.name || '', phone: userAttributes?.phone_number || '' });
-    orderService.getMyOrders().then((data) => {
-      setOrders(data);
-      setLoadingOrders(false);
-    });
+    orderService.getMyOrders()
+      .then((data) => {
+        setOrders(data);
+        setLoadingOrders(false);
+      })
+      .catch(() => {
+        setOrders([]);
+        setLoadingOrders(false);
+      });
   }, [isGuest, userAttributes, navigate]);
 
   const handleLogout = async () => {

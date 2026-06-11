@@ -21,7 +21,9 @@ export default function ProductManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const load = () => {
-    productService.getAll({}).then((data) => { setProducts(data); setLoading(false); });
+    productService.getAll({})
+      .then((data) => { setProducts(data); setLoading(false); })
+      .catch(() => { setProducts([]); setLoading(false); });
   };
 
   useEffect(() => { load(); }, []);
