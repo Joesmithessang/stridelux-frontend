@@ -27,7 +27,7 @@ export default function Shop() {
 
   useEffect(() => {
     setLoading(true);
-    productService.getAll({ category, brand, sort, search })
+    productService.getAll({ category, brand, sort, search, inStock: true })
       .then((data) => {
         setProducts(data);
         setLoading(false);

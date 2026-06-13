@@ -26,8 +26,18 @@ export default function Home() {
   useEffect(() => {
     productService.getAll({})
       .then((products) => {
-        setFeatured(products.filter((p) => p.tags?.includes('bestseller')).slice(0, 4));
-        setNewArrivals(products.filter((p) => p.tags?.includes('new')).slice(0, 4));
+        const bestsellers = products.filter((p) => p.tags?.includes('bestseller'));
+        const news = products.filter((p) => p.tags?.includes('new'));
+
+        // Fallback: if tags aren't set, derive sections from product data
+        setFeatured(
+          (bestsellers.length ? bestsellers : [...products].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)))
+            .slice(0, 4)
+        );
+        setNewArrivals(
+          (news.length ? news : [...products].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+            .slice(0, 4)
+        );
       })
       .catch(() => {});
   }, []);

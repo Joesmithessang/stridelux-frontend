@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
-  FiGrid, FiPackage, FiShoppingBag, FiBarChart2, FiUsers,
+  FiGrid, FiPackage, FiShoppingBag, FiBarChart2, FiUsers, FiTag,
   FiLogOut, FiArrowLeft, FiMenu, FiX,
 } from 'react-icons/fi';
 import { useState } from 'react';
@@ -11,6 +11,7 @@ const ADMIN_NAV = [
   { to: '/admin/products', label: 'Products', icon: <FiShoppingBag /> },
   { to: '/admin/orders', label: 'Orders', icon: <FiPackage /> },
   { to: '/admin/users', label: 'Users', icon: <FiUsers /> },
+  { to: '/admin/coupons', label: 'Coupons', icon: <FiTag /> },
   { to: '/admin/reports', label: 'Reports', icon: <FiBarChart2 /> },
 ];
 

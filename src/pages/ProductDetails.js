@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { FiHeart, FiStar, FiShoppingBag, FiZap, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiHeart, FiStar, FiShoppingBag, FiZap, FiArrowLeft, FiCheck, FiX } from 'react-icons/fi';
 import { productService } from '../services/productService';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -21,6 +21,7 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -40,29 +41,37 @@ export default function ProductDetails() {
     const needsSize = product.sizes && product.sizes.length > 1;
     if (needsSize && !selectedSize) {
       toast.error('Please select a size');
-      return;
+      return false;
     }
     const size = selectedSize || product.sizes?.[0] || 'One Size';
     addToCart(product, size, quantity);
     setAddedToCart(true);
     toast.success(`Added to cart!`);
     setTimeout(() => setAddedToCart(false), 2000);
+    return true;
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    navigate('/checkout');
+    if (handleAddToCart()) navigate('/checkout');
   };
 
   if (loading) return <div className="page-loading"><LoadingSpinner fullPage /></div>;
 
   if (!product) {
     return (
-      <main className="not-found-page">
+      <main className="product-not-found">
         <div className="section-container">
-          <h1>Product Not Found</h1>
-          <p>The product you're looking for doesn't exist or has been removed.</p>
-          <Link to="/shop" className="btn btn-primary">Back to Shop</Link>
+          <div className="product-not-found-inner">
+            <div className="not-found-icon">
+              <FiShoppingBag />
+            </div>
+            <h1>Product Not Found</h1>
+            <p>The product you're looking for doesn't exist or may have been removed from our store.</p>
+            <div className="not-found-actions">
+              <Link to="/shop" className="btn btn-primary">Browse All Products</Link>
+              <Link to="/" className="btn btn-outline">Back to Home</Link>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -80,16 +89,21 @@ export default function ProductDetails() {
   return (
     <main className="details-page">
       <div className="section-container">
-        {/* Breadcrumb */}
-        <nav className="breadcrumb">
-          <Link to="/">Home</Link>
-          <span>/</span>
-          <Link to="/shop">Shop</Link>
-          <span>/</span>
-          <Link to={`/shop?category=${product.category}`}>{product.category}</Link>
-          <span>/</span>
-          <span>{product.name}</span>
-        </nav>
+        {/* Breadcrumb + close */}
+        <div className="details-nav-row">
+          <nav className="breadcrumb">
+            <Link to="/">Home</Link>
+            <span>/</span>
+            <Link to="/shop">Shop</Link>
+            <span>/</span>
+            <Link to={`/shop?category=${product.category}`}>{product.category}</Link>
+            <span>/</span>
+            <span>{product.name}</span>
+          </nav>
+          <button className="details-close-btn" onClick={() => navigate(-1)} title="Close">
+            <FiX />
+          </button>
+        </div>
 
         <div className="details-layout">
           {/* Image gallery */}
@@ -155,7 +169,7 @@ export default function ProductDetails() {
                 <div className="size-header">
                   <h3>Size</h3>
                   {product.sizes[0] !== 'One Size' && (
-                    <button className="size-guide-link">Size Guide</button>
+                    <button className="size-guide-link" onClick={() => setSizeGuideOpen(true)}>Size Guide</button>
                   )}
                 </div>
                 <div className="size-grid">
@@ -234,6 +248,61 @@ export default function ProductDetails() {
           </section>
         )}
       </div>
+
+      {/* Size Guide Modal */}
+      {sizeGuideOpen && (
+        <div className="admin-modal-overlay" onClick={() => setSizeGuideOpen(false)}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2>Size Guide</h2>
+              <button className="modal-close-btn" onClick={() => setSizeGuideOpen(false)}><FiX /></button>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-2)', marginBottom: '1.25rem' }}>
+                Stridelux shoes are sized to North American standards. Use the chart below to find your best fit.
+              </p>
+              <table className="size-guide-table">
+                <thead>
+                  <tr>
+                    <th>US / Canada</th>
+                    <th>Europe (EU)</th>
+                    <th>United Kingdom (UK)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SIZE_GUIDE.map((row) => (
+                    <tr key={row.us}>
+                      <td>{row.us}</td>
+                      <td>{row.eu}</td>
+                      <td>{row.uk}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="size-guide-note">
+                Sizes are approximate. If you are between sizes, we recommend sizing up for the best comfort.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
+
+const SIZE_GUIDE = [
+  { us: '6',    eu: '39', uk: '5.5' },
+  { us: '6.5',  eu: '39', uk: '6'   },
+  { us: '7',    eu: '40', uk: '6.5' },
+  { us: '7.5',  eu: '41', uk: '7'   },
+  { us: '8',    eu: '41', uk: '7.5' },
+  { us: '8.5',  eu: '42', uk: '8'   },
+  { us: '9',    eu: '42', uk: '8.5' },
+  { us: '9.5',  eu: '43', uk: '9'   },
+  { us: '10',   eu: '44', uk: '9.5' },
+  { us: '10.5', eu: '44', uk: '10'  },
+  { us: '11',   eu: '45', uk: '10.5'},
+  { us: '11.5', eu: '45', uk: '11'  },
+  { us: '12',   eu: '46', uk: '11.5'},
+  { us: '13',   eu: '47', uk: '12'  },
+];

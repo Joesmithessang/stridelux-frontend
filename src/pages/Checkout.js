@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiLock, FiCreditCard, FiTruck, FiCheck, FiChevronRight } from 'react-icons/fi';
+import { FiLock, FiTruck, FiCheck, FiChevronRight, FiTag, FiX } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/orderService';
+import api from '../services/api';
+import { USE_MOCK } from '../config/aws-config';
 import toast from 'react-hot-toast';
 
-const STEPS = ['Shipping', 'Payment', 'Review'];
+const STEPS = ['Shipping', 'Review & Pay'];
 
 const INITIAL_SHIPPING = {
   fullName: '', email: '', phone: '', address: '', city: '',
   state: '', postalCode: '', country: 'Canada',
-};
-
-const INITIAL_PAYMENT = {
-  cardNumber: '', cardName: '', expiry: '', cvv: '',
 };
 
 export default function Checkout() {
@@ -29,12 +27,19 @@ export default function Checkout() {
       ? { fullName: userAttributes.name || '', email: userAttributes.email || '', phone: userAttributes.phone_number || '', address: '', city: '', state: '', postalCode: '', country: 'Canada' }
       : { ...INITIAL_SHIPPING }
   );
-  const [payment, setPayment] = useState({ ...INITIAL_PAYMENT });
+  const [couponCode, setCouponCode] = useState('');
+  const [couponData, setCouponData] = useState(null); // { code, discount, type }
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const shippingCost = shippingMethod === 'express' ? 20 : 10;
-  const tax = subtotal * 0.13;
-  const total = subtotal + shippingCost + tax;
+  const tax = subtotal * 0.025;
+  const discountAmount = couponData
+    ? couponData.type === 'percentage'
+      ? (subtotal * couponData.discount) / 100
+      : Math.min(couponData.discount, subtotal)
+    : 0;
+  const total = subtotal + shippingCost + tax - discountAmount;
 
   if (cartItems.length === 0) {
     return (
@@ -53,16 +58,38 @@ export default function Checkout() {
     window.scrollTo(0, 0);
   };
 
-  const handlePaymentSubmit = (e) => {
-    e.preventDefault();
-    setStep(2);
-    window.scrollTo(0, 0);
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) return;
+    setApplyingCoupon(true);
+    try {
+      if (USE_MOCK) {
+        // Mock coupon store — matches default coupons seeded in adminService
+        const MOCK_COUPONS = { SAVE10: { code: 'SAVE10', discount: 10, type: 'percentage' }, STRIDE20: { code: 'STRIDE20', discount: 20, type: 'percentage' } };
+        const found = MOCK_COUPONS[code];
+        if (found) { setCouponData(found); toast.success(`Coupon applied: ${found.discount}% off`); }
+        else { toast.error('Invalid coupon code'); }
+      } else {
+        const result = await api.post('/coupons/validate', { code });
+        setCouponData(result);
+        toast.success(`Coupon applied: ${result.discount}${result.type === 'percentage' ? '%' : '$'} off`);
+      }
+    } catch {
+      toast.error('Invalid or expired coupon code');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setCouponData(null);
+    setCouponCode('');
   };
 
   const handlePlaceOrder = async () => {
     setLoading(true);
     try {
-      const order = await orderService.create({
+      const orderPayload = {
         items: cartItems.map((i) => ({
           productId: i.id,
           name: i.name,
@@ -76,19 +103,34 @@ export default function Checkout() {
         shippingCost,
         subtotal,
         tax,
+        discountAmount,
+        couponCode: couponData?.code || null,
         total,
-      });
-      clearCart();
-      navigate(`/order-confirmation/${order.orderId}`);
+      };
+
+      if (USE_MOCK) {
+        // Mock: create order directly and navigate to confirmation
+        const order = await orderService.create(orderPayload);
+        clearCart();
+        navigate(`/order-confirmation/${order.orderId}`);
+      } else {
+        // Real: create Stripe checkout session — backend returns { orderId, url }
+        const { orderId, url } = await api.post('/payments/checkout-session', orderPayload);
+        if (url) {
+          // Mark cart to be cleared once Stripe redirects back to confirmation page
+          sessionStorage.setItem('stripe_pending_order', orderId);
+          window.location.href = url;
+        } else {
+          clearCart();
+          navigate(`/order-confirmation/${orderId}`);
+        }
+      }
     } catch {
-      toast.error('Failed to place order. Please try again.');
+      toast.error('Failed to initiate payment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const formatCard = (val) => val.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
-  const formatExpiry = (val) => val.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').slice(0, 5);
 
   return (
     <main className="checkout-page">
@@ -155,77 +197,32 @@ export default function Checkout() {
                 <div className="shipping-options">
                   <label className={`shipping-option ${shippingMethod === 'standard' ? 'active' : ''}`}>
                     <input type="radio" name="shipping" value="standard" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} />
-                    <div>
+                    <span className="shipping-radio-dot" />
+                    <div className="shipping-option-info">
                       <strong>Standard Shipping</strong>
                       <p>5–7 business days</p>
                     </div>
-                    <span>$10.00</span>
+                    <span className="shipping-option-price">$10.00</span>
                   </label>
                   <label className={`shipping-option ${shippingMethod === 'express' ? 'active' : ''}`}>
                     <input type="radio" name="shipping" value="express" checked={shippingMethod === 'express'} onChange={() => setShippingMethod('express')} />
-                    <div>
+                    <span className="shipping-radio-dot" />
+                    <div className="shipping-option-info">
                       <strong>Express Shipping</strong>
                       <p>1–3 business days</p>
                     </div>
-                    <span>$20.00</span>
+                    <span className="shipping-option-price">$20.00</span>
                   </label>
                 </div>
 
                 <button type="submit" className="btn btn-primary btn-full checkout-next-btn">
-                  Continue to Payment <FiChevronRight />
+                  Review Order <FiChevronRight />
                 </button>
               </form>
             )}
 
-            {/* ── Step 1: Payment ── */}
+            {/* ── Step 1: Review & Pay ── */}
             {step === 1 && (
-              <form className="checkout-form-card" onSubmit={handlePaymentSubmit}>
-                <h2><FiCreditCard /> Payment Details</h2>
-                <div className="payment-note">
-                  <FiLock />
-                  <span>Payments are processed securely via Stripe. Your card details are never stored.</span>
-                </div>
-                <div className="form-group">
-                  <label>Card Number *</label>
-                  <input
-                    required
-                    value={payment.cardNumber}
-                    onChange={(e) => setPayment({ ...payment, cardNumber: formatCard(e.target.value) })}
-                    placeholder="4242 4242 4242 4242"
-                    maxLength={19}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Name on Card *</label>
-                  <input required value={payment.cardName} onChange={(e) => setPayment({ ...payment, cardName: e.target.value })} placeholder="Jane Smith" />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Expiry Date *</label>
-                    <input
-                      required
-                      value={payment.expiry}
-                      onChange={(e) => setPayment({ ...payment, expiry: formatExpiry(e.target.value) })}
-                      placeholder="MM/YY"
-                      maxLength={5}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>CVV *</label>
-                    <input required value={payment.cvv} onChange={(e) => setPayment({ ...payment, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="123" maxLength={4} />
-                  </div>
-                </div>
-                <div className="checkout-step-nav">
-                  <button type="button" className="btn btn-outline" onClick={() => setStep(0)}>← Back</button>
-                  <button type="submit" className="btn btn-primary">
-                    Review Order <FiChevronRight />
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* ── Step 2: Review ── */}
-            {step === 2 && (
               <div className="checkout-form-card">
                 <h2>Review Your Order</h2>
 
@@ -242,19 +239,11 @@ export default function Checkout() {
                   </p>
                 </div>
 
-                <div className="review-section">
-                  <div className="review-header">
-                    <h3>Payment</h3>
-                    <button className="review-edit-btn" onClick={() => setStep(1)}>Edit</button>
-                  </div>
-                  <p>Card ending in {payment.cardNumber.slice(-4)}</p>
-                </div>
-
                 <div className="review-items">
                   <h3>Items ({cartItems.length})</h3>
                   {cartItems.map((item) => (
                     <div key={item.cartItemId} className="review-item">
-                      <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity='0.3'; }} />
+                      <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity = '0.3'; }} />
                       <div>
                         <p className="review-item-name">{item.name}</p>
                         <p className="review-item-meta">Size {item.selectedSize} · Qty {item.quantity}</p>
@@ -264,14 +253,19 @@ export default function Checkout() {
                   ))}
                 </div>
 
+                <div className="payment-note" style={{ marginTop: '1.5rem' }}>
+                  <FiLock />
+                  <span>You will be redirected to Stripe's secure payment page to complete your purchase.</span>
+                </div>
+
                 <div className="checkout-step-nav">
-                  <button className="btn btn-outline" onClick={() => setStep(1)}>← Back</button>
+                  <button className="btn btn-outline" onClick={() => setStep(0)}>← Back</button>
                   <button
                     className="btn btn-accent btn-lg"
                     onClick={handlePlaceOrder}
                     disabled={loading}
                   >
-                    {loading ? 'Placing Order…' : `Place Order — $${total.toFixed(2)}`}
+                    {loading ? 'Redirecting to Payment…' : `Pay $${total.toFixed(2)} via Stripe`}
                   </button>
                 </div>
               </div>
@@ -285,7 +279,7 @@ export default function Checkout() {
               {cartItems.map((item) => (
                 <div key={item.cartItemId} className="summary-item">
                   <div className="summary-item-img">
-                    <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity='0.3'; }} />
+                    <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity = '0.3'; }} />
                     <span className="item-qty-badge">{item.quantity}</span>
                   </div>
                   <div className="summary-item-info">
@@ -296,14 +290,48 @@ export default function Checkout() {
                 </div>
               ))}
             </div>
+
+            {/* Coupon code input */}
+            <div className="summary-divider" />
+            {couponData ? (
+              <div className="coupon-applied">
+                <FiTag />
+                <span><strong>{couponData.code}</strong> — {couponData.discount}{couponData.type === 'percentage' ? '%' : '$'} off</span>
+                <button className="coupon-remove-btn" onClick={removeCoupon} title="Remove coupon"><FiX /></button>
+              </div>
+            ) : (
+              <div className="coupon-row">
+                <input
+                  className="coupon-input"
+                  placeholder="Coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                />
+                <button
+                  className="btn btn-outline btn-sm coupon-apply-btn"
+                  onClick={handleApplyCoupon}
+                  disabled={applyingCoupon || !couponCode.trim()}
+                >
+                  {applyingCoupon ? '…' : 'Apply'}
+                </button>
+              </div>
+            )}
+
             <div className="summary-divider" />
             <div className="summary-row"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
             <div className="summary-row"><span>Shipping</span><span>${shippingCost.toFixed(2)}</span></div>
-            <div className="summary-row"><span>Tax (13%)</span><span>${tax.toFixed(2)}</span></div>
+            <div className="summary-row"><span>VAT (2.5%)</span><span>${tax.toFixed(2)}</span></div>
+            {discountAmount > 0 && (
+              <div className="summary-row" style={{ color: '#22c55e' }}>
+                <span>Discount ({couponData.code})</span>
+                <span>−${discountAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="summary-divider" />
             <div className="summary-row summary-total"><span>Total</span><span>${total.toFixed(2)}</span></div>
             <div className="checkout-trust">
-              <p><FiLock /> SSL secured checkout</p>
+              <p><FiLock /> SSL secured checkout via Stripe</p>
             </div>
           </aside>
         </div>

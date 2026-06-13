@@ -34,6 +34,7 @@ export const productService = {
           (p) => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
         );
       }
+      if (filters.inStock) result = result.filter((p) => p.inStock !== false);
       if (filters.sort === 'price_asc') result.sort((a, b) => a.price - b.price);
       if (filters.sort === 'price_desc') result.sort((a, b) => b.price - a.price);
       if (filters.sort === 'newest') result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

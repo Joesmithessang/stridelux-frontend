@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiHeart, FiShoppingBag, FiStar } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -6,10 +6,18 @@ import { useWishlist } from '../context/WishlistContext';
 function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
+  const navigate = useNavigate();
   const wishlisted = isWishlisted(product.id);
 
   const handleAddToCart = (e) => {
     e.preventDefault();
+    const hasMultipleSizes = product.sizes && product.sizes.length > 1;
+    if (hasMultipleSizes) {
+      // Navigate to product detail so user can pick a size
+      navigate(`/product/${product.id}`);
+      return;
+    }
+    // Single size or no sizes — add directly
     const defaultSize = product.sizes?.[0] || 'One Size';
     addToCart(product, defaultSize, 1);
   };

@@ -25,7 +25,8 @@ const ROLES = [
 
 const DEPARTMENTS = ['Management', 'Customer Support', 'Operations', 'Marketing'];
 
-const EMPTY_FORM = { name: '', email: '', phone: '', role: '', department: '', status: 'active' };
+const today = () => new Date().toISOString().split('T')[0];
+const EMPTY_FORM = { name: '', email: '', phone: '', role: '', department: '', status: 'active', joinedAt: today() };
 
 export default function UserManagement() {
   const [tab, setTab] = useState('customers');
@@ -40,10 +41,13 @@ export default function UserManagement() {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    adminService.getUsers().then((d) => { setData(d); setLoading(false); });
+    adminService.getUsers()
+      .then((d) => { setData(d); setLoading(false); })
+      .catch(() => { setData({ customers: [], employees: [] }); setLoading(false); });
   }, []);
 
   if (loading) return <div className="admin-loading"><LoadingSpinner /></div>;
+  if (!data) return <div className="admin-loading"><p style={{ color: '#888' }}>Unable to load users. The API may not be reachable.</p></div>;
 
   const customers = (data.customers || []).filter((u) => {
     const q = search.toLowerCase();
@@ -76,6 +80,7 @@ export default function UserManagement() {
       role: employee.role || '',
       department: employee.department || '',
       status: employee.status || 'active',
+      joinedAt: employee.joinedAt ? employee.joinedAt.split('T')[0] : today(),
     });
     setModalOpen(true);
   };
@@ -355,6 +360,11 @@ export default function UserManagement() {
                     {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Join Date *</label>
+                <input type="date" required max={today()} {...field('joinedAt')} />
               </div>
 
               <div className="admin-modal-footer">
