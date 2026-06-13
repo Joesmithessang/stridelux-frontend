@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ScrollToTop from '../components/ScrollToTop';
 import { Toaster } from 'react-hot-toast';
 
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +34,7 @@ import ProductManagement from '../pages/admin/ProductManagement';
 import OrderManagement from '../pages/admin/OrderManagement';
 import UserManagement from '../pages/admin/UserManagement';
 import Reports from '../pages/admin/Reports';
+import CouponManagement from '../pages/admin/CouponManagement';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -55,6 +57,7 @@ export default function AppRoutes() {
         <Toaster
           position="top-right"
           toastOptions={{
+            duration: 5000,
             style: {
               background: '#1c1c1c',
               color: '#f0f0f0',
@@ -64,10 +67,11 @@ export default function AppRoutes() {
               fontSize: '14px',
             },
             success: { iconTheme: { primary: '#22c55e', secondary: '#fff' } },
-            error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+            error:   { duration: 6000, iconTheme: { primary: '#ef4444', secondary: '#fff' } },
           }}
         />
 
+        <ScrollToTop />
         <Routes>
           {/* Admin routes — no Navbar/Footer */}
           <Route
@@ -82,6 +86,7 @@ export default function AppRoutes() {
             <Route path="products" element={<ProductManagement />} />
             <Route path="orders" element={<OrderManagement />} />
             <Route path="users" element={<UserManagement />} />
+            <Route path="coupons" element={<CouponManagement />} />
             <Route path="reports" element={<Reports />} />
           </Route>
 

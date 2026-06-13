@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiDollarSign, FiPackage, FiTrendingUp, FiDownload } from 'react-icons/fi';
+import { FiDollarSign, FiPackage, FiTrendingUp, FiDownload, FiSearch, FiX, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { adminService } from '../../services/adminService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -19,13 +19,18 @@ export default function Reports() {
   const [range, setRange] = useState('30d');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [txSearch, setTxSearch] = useState('');
+  const [txSort, setTxSort] = useState('newest');
 
   useEffect(() => {
     setLoading(true);
-    adminService.getReports(range).then((d) => { setData(d); setLoading(false); });
+    adminService.getReports(range)
+      .then((d) => { setData(d); setLoading(false); })
+      .catch(() => { setData(null); setLoading(false); });
   }, [range]);
 
   if (loading) return <div className="admin-loading"><LoadingSpinner /></div>;
+  if (!data) return <div className="admin-loading"><p style={{ color: '#888' }}>Reports unavailable. The API may not be reachable.</p></div>;
 
   const SUMMARY = [
     { icon: <FiDollarSign />, label: 'Total Revenue', value: `$${Number(data.revenue).toLocaleString('en-CA', { minimumFractionDigits: 2 })}`, color: 'stat-green' },
@@ -75,7 +80,26 @@ export default function Reports() {
       <div className="admin-card">
         <div className="admin-card-header">
           <h3>Transaction History</h3>
-          <span>{data.transactions?.length} transactions</span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <div className="admin-search-bar" style={{ width: '220px' }}>
+              <FiSearch />
+              <input
+                placeholder="Search orders…"
+                value={txSearch}
+                onChange={(e) => setTxSearch(e.target.value)}
+              />
+              {txSearch && <button onClick={() => setTxSearch('')}><FiX /></button>}
+            </div>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => setTxSort((s) => s === 'newest' ? 'oldest' : 'newest')}
+            >
+              {txSort === 'newest' ? <><FiArrowDown /> Newest</> : <><FiArrowUp /> Oldest</>}
+            </button>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>
+              {data.transactions?.length} total
+            </span>
+          </div>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -93,7 +117,19 @@ export default function Reports() {
               </tr>
             </thead>
             <tbody>
-              {data.transactions?.map((order) => (
+              {(data.transactions || [])
+                .filter((o) => {
+                  if (!txSearch.trim()) return true;
+                  const q = txSearch.toLowerCase();
+                  const name = (o.customerName || o.shippingInfo?.fullName || '').toLowerCase();
+                  const email = (o.customerEmail || o.shippingInfo?.email || '').toLowerCase();
+                  return o.orderId.toLowerCase().includes(q) || name.includes(q) || email.includes(q);
+                })
+                .sort((a, b) => {
+                  const diff = new Date(b.createdAt) - new Date(a.createdAt);
+                  return txSort === 'newest' ? diff : -diff;
+                })
+                .map((order) => (
                 <tr key={order.orderId}>
                   <td className="order-id-cell">{order.orderId}</td>
                   <td>

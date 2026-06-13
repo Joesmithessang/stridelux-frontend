@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FiSearch, FiX, FiChevronDown, FiEye } from 'react-icons/fi';
+import { FiSearch, FiX, FiChevronDown, FiEye, FiArrowUp, FiArrowDown } from 'react-icons/fi';
 import { orderService } from '../../services/orderService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -18,12 +18,12 @@ export default function OrderManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [detailOrder, setDetailOrder] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
+  const [sortOrder, setSortOrder] = useState('newest');
 
   const load = () => {
-    orderService.getAll({}).then((data) => {
-      setOrders(data);
-      setLoading(false);
-    });
+    orderService.getAll({})
+      .then((data) => { setOrders(data); setLoading(false); })
+      .catch(() => { setOrders([]); setLoading(false); });
   };
 
   useEffect(() => { load(); }, []);
@@ -42,13 +42,19 @@ export default function OrderManagement() {
     }
   };
 
-  const filtered = orders.filter((o) => {
-    const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
-    const customer = o.customerName || o.shippingInfo?.fullName || '';
-    const matchesSearch = o.orderId.toLowerCase().includes(search.toLowerCase()) ||
-      customer.toLowerCase().includes(search.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const filtered = orders
+    .filter((o) => {
+      const matchesStatus = statusFilter === 'all' || o.status === statusFilter;
+      const q = search.toLowerCase();
+      const customer = (o.customerName || o.shippingInfo?.fullName || '').toLowerCase();
+      const email = (o.customerEmail || o.shippingInfo?.email || '').toLowerCase();
+      const matchesSearch = !q || o.orderId.toLowerCase().includes(q) || customer.includes(q) || email.includes(q);
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a, b) => {
+      const diff = new Date(b.createdAt) - new Date(a.createdAt);
+      return sortOrder === 'newest' ? diff : -diff;
+    });
 
   return (
     <div className="admin-page">
@@ -63,9 +69,16 @@ export default function OrderManagement() {
       <div className="admin-filters-row">
         <div className="admin-search-bar">
           <FiSearch />
-          <input placeholder="Search by order ID or customer…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input placeholder="Search by order ID, customer, or email…" value={search} onChange={(e) => setSearch(e.target.value)} />
           {search && <button onClick={() => setSearch('')}><FiX /></button>}
         </div>
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => setSortOrder((s) => s === 'newest' ? 'oldest' : 'newest')}
+          title="Toggle sort order"
+        >
+          {sortOrder === 'newest' ? <><FiArrowDown /> Newest First</> : <><FiArrowUp /> Oldest First</>}
+        </button>
         <div className="status-filter-tabs">
           {STATUSES.map((s) => (
             <button

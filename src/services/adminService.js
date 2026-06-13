@@ -5,6 +5,24 @@ import mockProducts from '../data/products';
 import { mockCustomers, mockEmployees } from '../data/mockUsers';
 
 const EMPLOYEE_STORAGE_KEY = 'stridelux_mock_employees';
+const COUPON_STORAGE_KEY   = 'stridelux_mock_coupons';
+
+const DEFAULT_COUPONS = [
+  { id: 'coup-001', code: 'SAVE10', discount: 10, type: 'percentage', active: true, createdAt: new Date().toISOString() },
+  { id: 'coup-002', code: 'STRIDE20', discount: 20, type: 'percentage', active: true, createdAt: new Date().toISOString() },
+];
+
+function getCouponStore() {
+  try {
+    const stored = localStorage.getItem(COUPON_STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return [...DEFAULT_COUPONS];
+}
+
+function saveCouponStore(coupons) {
+  try { localStorage.setItem(COUPON_STORAGE_KEY, JSON.stringify(coupons)); } catch {}
+}
 
 function getEmployeeStore() {
   try {
@@ -103,5 +121,42 @@ export const adminService = {
       return { success: true };
     }
     return api.delete(`/admin/employees/${id}`);
+  },
+
+  // Coupons
+  async getCoupons() {
+    if (USE_MOCK) return getCouponStore();
+    return api.get('/admin/coupons');
+  },
+  async createCoupon(data) {
+    if (USE_MOCK) {
+      const coupons = getCouponStore();
+      const coupon = { ...data, id: `coup-${Date.now()}`, createdAt: new Date().toISOString() };
+      coupons.push(coupon);
+      saveCouponStore(coupons);
+      return coupon;
+    }
+    return api.post('/admin/coupons', data);
+  },
+  async updateCoupon(id, data) {
+    if (USE_MOCK) {
+      const coupons = getCouponStore();
+      const idx = coupons.findIndex((c) => c.id === id);
+      if (idx === -1) throw new Error('Coupon not found');
+      coupons[idx] = { ...coupons[idx], ...data };
+      saveCouponStore(coupons);
+      return coupons[idx];
+    }
+    return api.put(`/admin/coupons/${id}`, data);
+  },
+  async deleteCoupon(id) {
+    if (USE_MOCK) {
+      const coupons = getCouponStore();
+      const idx = coupons.findIndex((c) => c.id === id);
+      if (idx !== -1) coupons.splice(idx, 1);
+      saveCouponStore(coupons);
+      return { success: true };
+    }
+    return api.delete(`/admin/coupons/${id}`);
   },
 };

@@ -1,17 +1,57 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FiCheck, FiPackage, FiArrowRight, FiHome } from 'react-icons/fi';
 import { orderService } from '../services/orderService';
+import { addressService } from '../services/addressService';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 export default function OrderConfirmation() {
-  const { orderId } = useParams();
+  const { orderId: rawOrderId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { isGuest } = useAuth();
+  const { clearCart } = useCart();
   const [order, setOrder] = useState(null);
+  const retriesRef = useRef(0);
+  const cartClearedRef = useRef(false);
+
+  // Strip malformed suffix from backend success_url (e.g. "uuid.sion_id=cs_test_...")
+  const orderId = rawOrderId?.includes('.') ? rawOrderId.split('.')[0] : rawOrderId;
+
+  // Clear cart exactly once when landing from a Stripe redirect
+  useEffect(() => {
+    if (cartClearedRef.current) return;
+    const pendingId = sessionStorage.getItem('stripe_pending_order');
+    const hasSessionParam = searchParams.get('session_id') || searchParams.get('sion_id')
+      || rawOrderId?.includes('sion_id') || rawOrderId?.includes('session_id');
+    if (pendingId || hasSessionParam) {
+      clearCart();
+      sessionStorage.removeItem('stripe_pending_order');
+      cartClearedRef.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (orderId) {
-      orderService.getById(orderId).then(setOrder).catch(() => {});
-    }
-  }, [orderId]);
+    if (!orderId) return;
+
+    const tryFetch = () => {
+      orderService.getById(orderId)
+        .then((o) => {
+          setOrder(o);
+          if (!isGuest && o.shippingInfo?.address) {
+            addressService.save(o.shippingInfo).catch(() => {});
+          }
+        })
+        .catch(() => {
+          if (retriesRef.current < 4) {
+            retriesRef.current += 1;
+            setTimeout(tryFetch, 3000);
+          }
+        });
+    };
+
+    tryFetch();
+  }, [orderId, isGuest]);
 
   return (
     <main className="confirmation-page">
