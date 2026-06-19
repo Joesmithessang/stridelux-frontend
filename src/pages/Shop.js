@@ -6,7 +6,7 @@ import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const CATEGORIES = ['All', 'Sneakers', 'Apparel', 'Accessories'];
-const BRANDS = ['All', 'Nike', 'Jordan', 'Adidas', 'New Balance', 'Puma'];
+const BRANDS = ['All', 'StrideLux', 'Nike', 'Jordan', 'Adidas', 'New Balance', 'Puma'];
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
   { value: 'price_asc', label: 'Price: Low → High' },

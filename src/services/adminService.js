@@ -8,8 +8,8 @@ const EMPLOYEE_STORAGE_KEY = 'stridelux_mock_employees';
 const COUPON_STORAGE_KEY   = 'stridelux_mock_coupons';
 
 const DEFAULT_COUPONS = [
-  { id: 'coup-001', code: 'SAVE10', discount: 10, type: 'percentage', active: true, createdAt: new Date().toISOString() },
-  { id: 'coup-002', code: 'STRIDE20', discount: 20, type: 'percentage', active: true, createdAt: new Date().toISOString() },
+  { couponId: 'coup-001', code: 'SAVE10', discount: 10, type: 'percentage', active: true, createdAt: new Date().toISOString() },
+  { couponId: 'coup-002', code: 'STRIDE20', discount: 20, type: 'percentage', active: true, createdAt: new Date().toISOString() },
 ];
 
 function getCouponStore() {
@@ -131,7 +131,7 @@ export const adminService = {
   async createCoupon(data) {
     if (USE_MOCK) {
       const coupons = getCouponStore();
-      const coupon = { ...data, id: `coup-${Date.now()}`, createdAt: new Date().toISOString() };
+      const coupon = { ...data, couponId: `coup-${Date.now()}`, createdAt: new Date().toISOString() };
       coupons.push(coupon);
       saveCouponStore(coupons);
       return coupon;
@@ -141,7 +141,7 @@ export const adminService = {
   async updateCoupon(id, data) {
     if (USE_MOCK) {
       const coupons = getCouponStore();
-      const idx = coupons.findIndex((c) => c.id === id);
+      const idx = coupons.findIndex((c) => c.couponId === id);
       if (idx === -1) throw new Error('Coupon not found');
       coupons[idx] = { ...coupons[idx], ...data };
       saveCouponStore(coupons);
@@ -152,7 +152,7 @@ export const adminService = {
   async deleteCoupon(id) {
     if (USE_MOCK) {
       const coupons = getCouponStore();
-      const idx = coupons.findIndex((c) => c.id === id);
+      const idx = coupons.findIndex((c) => c.couponId === id);
       if (idx !== -1) coupons.splice(idx, 1);
       saveCouponStore(coupons);
       return { success: true };

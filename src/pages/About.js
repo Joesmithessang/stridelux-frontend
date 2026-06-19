@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { FiArrowRight, FiShield, FiTruck, FiRefreshCw, FiStar } from 'react-icons/fi';
 
 const STATS = [
-  { value: '50K+', label: 'Happy Customers' },
-  { value: '2,500+', label: 'Products Available' },
+  { value: '5K+', label: 'Happy Customers' },
+  { value: '10+', label: 'Products Available' },
   { value: '98%', label: 'Positive Reviews' },
   { value: '30-day', label: 'Return Policy' },
 ];

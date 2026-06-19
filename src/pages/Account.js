@@ -8,6 +8,7 @@ import { updateUserAttributes } from 'aws-amplify/auth';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
+import { productService } from '../services/productService';
 import { USE_MOCK_AUTH } from '../config/aws-config';
 import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -65,9 +66,35 @@ export default function Account() {
   // One-time data fetch — only re-runs if auth state flips (not on every userAttributes reference change)
   useEffect(() => {
     if (isGuest) { navigate('/login'); return; }
-    orderService.getMyOrders()
-      .then((data) => { setOrders(data); setLoadingOrders(false); })
-      .catch(() => { setOrders([]); setLoadingOrders(false); });
+
+    // Fetch orders + product catalog in parallel so we can fill in missing
+    // item images (snapshotted at order time, may be empty for older orders)
+    Promise.all([
+      orderService.getMyOrders().catch(() => []),
+      productService.getAll({}).catch(() => []),
+    ]).then(([data, products]) => {
+      const imgMap = {};
+      const nameMap = {};
+      for (const p of products) {
+        const thumbnail = p.thumbnail || p.image || '';
+        if (p.id) imgMap[p.id] = thumbnail;
+        if (p.productId) imgMap[p.productId] = thumbnail;
+        if (p.name) nameMap[p.name.toLowerCase()] = thumbnail;
+      }
+      const enriched = data.map((order) => ({
+        ...order,
+        items: (order.items || []).map((item) => {
+          const lookupKey = item.productId || item.id;
+          return {
+            ...item,
+            image: item.image || imgMap[lookupKey] || nameMap[item.name?.toLowerCase()] || '',
+          };
+        }),
+      }));
+      setOrders(enriched);
+      setLoadingOrders(false);
+    });
+
     addressService.getAll()
       .then(setAddresses)
       .catch(() => setAddresses([]))
