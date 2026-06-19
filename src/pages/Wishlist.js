@@ -2,17 +2,41 @@ import { Link } from 'react-router-dom';
 import { FiHeart, FiShoppingBag, FiTrash2, FiArrowRight } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Wishlist() {
   const { wishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
+  const { isGuest } = useAuth();
 
   const handleAddToCart = (product) => {
     const size = product.sizes?.[0] || 'One Size';
     addToCart(product, size, 1);
     toast.success('Added to cart!');
   };
+
+  if (isGuest) {
+    return (
+      <main className="wishlist-page">
+        <div className="section-container">
+          <div className="page-hero-mini">
+            <p className="section-overline">Your List</p>
+            <h1>Wishlist</h1>
+          </div>
+          <div className="empty-state">
+            <div className="empty-icon"><FiHeart /></div>
+            <h2>Save your favourites</h2>
+            <p>Log in to create your wishlist and access it from any device.</p>
+            <Link to="/login" className="btn btn-primary btn-lg">Log In</Link>
+            <Link to="/shop" className="btn btn-ghost btn-lg" style={{ marginTop: '0.5rem' }}>
+              Browse Products <FiArrowRight />
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (wishlist.length === 0) {
     return (
@@ -25,7 +49,7 @@ export default function Wishlist() {
           <div className="empty-state">
             <div className="empty-icon"><FiHeart /></div>
             <h2>Your wishlist is empty</h2>
-            <p>Save items you love and come back to them anytime.</p>
+            <p>Tap the heart icon on any product to save it here.</p>
             <Link to="/shop" className="btn btn-primary btn-lg">
               Browse Products <FiArrowRight />
             </Link>

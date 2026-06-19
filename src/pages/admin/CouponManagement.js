@@ -41,8 +41,8 @@ export default function CouponManagement() {
     try {
       const data = { ...form, code: form.code.toUpperCase().trim(), discount: Number(form.discount) };
       if (editingCoupon) {
-        const updated = await adminService.updateCoupon(editingCoupon.id, data);
-        setCoupons((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        const updated = await adminService.updateCoupon(editingCoupon.couponId, data);
+        setCoupons((prev) => prev.map((c) => (c.couponId === updated.couponId ? updated : c)));
         toast.success('Coupon updated');
       } else {
         const created = await adminService.createCoupon(data);
@@ -60,7 +60,7 @@ export default function CouponManagement() {
   const handleDelete = async (id) => {
     try {
       await adminService.deleteCoupon(id);
-      setCoupons((prev) => prev.filter((c) => c.id !== id));
+      setCoupons((prev) => prev.filter((c) => c.couponId !== id));
       setDeleteConfirm(null);
       toast.success('Coupon deleted');
     } catch {
@@ -99,7 +99,7 @@ export default function CouponManagement() {
               {coupons.length === 0 ? (
                 <tr><td colSpan={6} className="admin-empty">No coupons yet. Create one above.</td></tr>
               ) : coupons.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.couponId}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <FiTag style={{ color: '#f97316' }} />
@@ -119,9 +119,9 @@ export default function CouponManagement() {
                       <button className="action-btn edit-btn" onClick={() => openEdit(c)} title="Edit">
                         <FiEdit2 />
                       </button>
-                      {deleteConfirm === c.id ? (
+                      {deleteConfirm === c.couponId ? (
                         <>
-                          <button className="action-btn confirm-btn" onClick={() => handleDelete(c.id)} title="Confirm delete">
+                          <button className="action-btn confirm-btn" onClick={() => handleDelete(c.couponId)} title="Confirm delete">
                             <FiCheck />
                           </button>
                           <button className="action-btn cancel-btn" onClick={() => setDeleteConfirm(null)} title="Cancel">
@@ -129,7 +129,7 @@ export default function CouponManagement() {
                           </button>
                         </>
                       ) : (
-                        <button className="action-btn delete-btn" onClick={() => setDeleteConfirm(c.id)} title="Delete">
+                        <button className="action-btn delete-btn" onClick={() => setDeleteConfirm(c.couponId)} title="Delete">
                           <FiTrash2 />
                         </button>
                       )}

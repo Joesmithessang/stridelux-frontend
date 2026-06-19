@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiDollarSign, FiPackage, FiShoppingBag, FiClock, FiArrowRight, FiTrendingUp } from 'react-icons/fi';
 import { adminService } from '../../services/adminService';
+import { productService } from '../../services/productService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const STATUS_COLORS = {
@@ -14,14 +15,32 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminService.getDashboardStats()
-      .then((data) => {
-        setStats(data);
+    Promise.all([
+      adminService.getDashboardStats(),
+      productService.getAll({}).catch(() => []),
+    ])
+      .then(([data, products]) => {
+        const imgMap = {};
+        const nameMap = {};
+        for (const p of products) {
+          const thumbnail = p.thumbnail || p.image || '';
+          if (p.id) imgMap[p.id] = thumbnail;
+          if (p.productId) imgMap[p.productId] = thumbnail;
+          if (p.name) nameMap[p.name.toLowerCase()] = thumbnail;
+        }
+        setStats({
+          ...data,
+          topProducts: (data.topProducts || []).map((p) => ({
+            ...p,
+            thumbnail: p.thumbnail || p.image
+              || imgMap[p.id || p.productId]
+              || nameMap[p.name?.toLowerCase()]
+              || '',
+          })),
+        });
         setLoading(false);
       })
-      .catch(() => {
-        setLoading(false);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="admin-loading"><LoadingSpinner /></div>;
