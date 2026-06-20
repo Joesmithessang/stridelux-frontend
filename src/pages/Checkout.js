@@ -121,7 +121,9 @@ export default function Checkout() {
           sessionStorage.setItem('stripe_pending_order', orderId);
           window.location.href = url;
         } else {
-          clearCart();
+          // No Stripe URL returned — set the same sessionStorage flag so CartContext
+          // clears the server cart on next mount, then navigate to confirmation
+          sessionStorage.setItem('stripe_pending_order', orderId);
           navigate(`/order-confirmation/${orderId}`);
         }
       }
