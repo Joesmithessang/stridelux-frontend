@@ -19,6 +19,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Verify from '../pages/Verify';
 import About from '../pages/About';
+import AwsArchitecture from '../pages/AwsArchitecture';
 import Contact from '../pages/Contact';
 import OrderConfirmation from '../pages/OrderConfirmation';
 import Wishlist from '../pages/Wishlist';
@@ -108,6 +109,7 @@ export default function AppRoutes() {
                   <Route path="/verify"                        element={<Verify />} />
                   <Route path="/forgot-password"               element={<ForgotPassword />} />
                   <Route path="/about"                         element={<About />} />
+                  <Route path="/architecture"                  element={<AwsArchitecture />} />
                   <Route path="/contact"                       element={<Contact />} />
                   <Route path="/wishlist"                      element={<Wishlist />} />
                   <Route path="/order-confirmation/:orderId"   element={<OrderConfirmation />} />

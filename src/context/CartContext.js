@@ -38,10 +38,18 @@ export function CartProvider({ children }) {
         try { setCartItems(JSON.parse(localStorage.getItem('stridelux_cart') || '[]')); }
         catch { setCartItems([]); }
       } else {
-        // Logged in on mount: fetch server cart
-        cartService.get(user.userId)
-          .then((items) => setCartItems(items || []))
-          .catch(() => setCartItems([]));
+        // Logged in on mount: if landing from a Stripe redirect, the cart was
+        // already charged — clear it without fetching the (now-stale) server cart
+        const pendingOrderId = sessionStorage.getItem('stripe_pending_order');
+        if (pendingOrderId) {
+          setCartItems([]);
+          cartService.clear(user.userId).catch(() => {});
+          sessionStorage.removeItem('stripe_pending_order');
+        } else {
+          cartService.get(user.userId)
+            .then((items) => setCartItems(items || []))
+            .catch(() => setCartItems([]));
+        }
       }
       return;
     }

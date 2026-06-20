@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiArrowRight, FiShield, FiTruck, FiRefreshCw, FiStar } from 'react-icons/fi';
+import { FiArrowRight, FiShield, FiTruck, FiRefreshCw, FiStar, FiServer } from 'react-icons/fi';
 
 const STATS = [
   { value: '5K+', label: 'Happy Customers' },
@@ -86,6 +86,23 @@ export default function About() {
                 <p>{v.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AWS Architecture */}
+      <section className="about-values">
+        <div className="section-container">
+          <div className="section-header center">
+            <p className="section-overline">Under the Hood</p>
+            <h2 className="section-heading">Built on AWS</h2>
+            <p style={{ maxWidth: '560px', margin: '0 auto 2rem', textAlign: 'center', color: 'var(--text-2)' }}>
+              StrideLux runs on a fully serverless AWS architecture — CloudFront, Lambda,
+              DynamoDB, Cognito, API Gateway, and more. See how every layer fits together.
+            </p>
+            <Link to="/architecture" className="btn btn-outline btn-lg">
+              <FiServer /> View AWS Architecture
+            </Link>
           </div>
         </div>
       </section>

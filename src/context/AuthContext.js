@@ -43,9 +43,8 @@ export function AuthProvider({ children }) {
   useEffect(() => { checkCurrentUser(); }, []);
 
   async function checkCurrentUser() {
-    console.log('[Auth] checkCurrentUser — USE_MOCK:', USE_MOCK);
-    try {
-      if (USE_MOCK) {
+    if (USE_MOCK) {
+      try {
         const stored = localStorage.getItem(MOCK_AUTH_KEY);
         if (!stored) throw new Error('no session');
         const session = JSON.parse(stored);
@@ -53,41 +52,64 @@ export function AuthProvider({ children }) {
         setUserAttributes(session.attributes);
         setUserGroup(session.group);
         return session.group;
+      } catch {
+        setUser(null);
+        setUserAttributes(null);
+        setUserGroup(null);
+        return null;
+      } finally {
+        setLoading(false);
       }
+    }
 
-      const currentUser = await getCurrentUser();
-      console.log('[Auth] getCurrentUser OK:', currentUser?.username);
-
-      const attributes  = await fetchUserAttributes();
-      console.log('[Auth] attributes:', JSON.stringify(attributes));
-
-      const session     = await fetchAuthSession();
-      const idPayload   = session.tokens?.idToken?.payload;
-      console.log('[Auth] idToken payload:', JSON.stringify(idPayload));
-
-      const groups     = idPayload?.['cognito:groups'] || [];
-      const customRole = attributes?.['custom:role'] || '';
-      console.log('[Auth] groups:', groups, '| custom:role:', customRole);
-
-      const isAdminUser =
-        groups.some((g) => g.toLowerCase() === 'admins') ||
-        customRole.toLowerCase() === 'admin';
-      const group = isAdminUser ? 'Admins' : 'Customers';
-      console.log('[Auth] resolved group:', group);
-
-      setUser(currentUser);
-      setUserAttributes(attributes);
-      setUserGroup(group);
-      return group;
-    } catch (err) {
-      console.log('[Auth] checkCurrentUser caught error:', err?.message || err);
+    // Step 1 — sole authority on whether a session exists.
+    // If this throws, the user is genuinely a guest.
+    let currentUser;
+    try {
+      currentUser = await getCurrentUser();
+    } catch {
       setUser(null);
       setUserAttributes(null);
       setUserGroup(null);
-      return null;
-    } finally {
       setLoading(false);
+      return null;
     }
+
+    // Session confirmed — commit the user object immediately.
+    // Nothing below can demote this back to null.
+    setUser(currentUser);
+
+    // Step 2 — fetch attributes + group with one retry on failure.
+    // A failure here leaves the user authenticated with null attributes
+    // and a default Customers group rather than incorrectly logging them out.
+    const fetchDetails = async () => {
+      const attributes = await fetchUserAttributes();
+      const session    = await fetchAuthSession();
+      const idPayload  = session.tokens?.idToken?.payload;
+      const groups     = idPayload?.['cognito:groups'] || [];
+      const customRole = attributes?.['custom:role'] || '';
+      const isAdmin    = groups.some((g) => g.toLowerCase() === 'admins')
+                         || customRole.toLowerCase() === 'admin';
+      return { attributes, group: isAdmin ? 'Admins' : 'Customers' };
+    };
+
+    let attributes = null;
+    let group = 'Customers';
+    try {
+      ({ attributes, group } = await fetchDetails());
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      try {
+        ({ attributes, group } = await fetchDetails());
+      } catch {
+        // Both attempts failed — user stays authenticated, group defaults to Customers
+      }
+    }
+
+    setUserAttributes(attributes);
+    setUserGroup(group);
+    setLoading(false);
+    return group;
   }
 
   async function handleSignIn(username, password) {
