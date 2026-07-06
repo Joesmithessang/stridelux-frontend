@@ -70,13 +70,16 @@ export default function ProductManagement() {
         stockCount: Number(form.stockCount),
       };
       if (editingProduct) {
-        await productService.update(editingProduct.id, data);
+        const returned = await productService.update(editingProduct.id, data);
+        const updated = { ...editingProduct, ...data, ...(returned || {}), id: editingProduct.id };
+        setProducts((prev) => prev.map((p) => p.id === updated.id ? updated : p));
         toast.success('Product updated');
       } else {
-        await productService.create(data);
+        const returned = await productService.create(data);
+        const created = { ...data, ...(returned || {}) };
+        if (created.id) setProducts((prev) => [created, ...prev]);
         toast.success('Product created');
       }
-      load();
       setModalOpen(false);
     } catch {
       toast.error('Failed to save product');
@@ -86,12 +89,13 @@ export default function ProductManagement() {
   };
 
   const handleDelete = async (id) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
+    setDeleteConfirm(null);
     try {
       await productService.delete(id);
       toast.success('Product deleted');
-      load();
-      setDeleteConfirm(null);
     } catch {
+      load(); // revert by re-fetching on failure
       toast.error('Failed to delete product');
     }
   };
