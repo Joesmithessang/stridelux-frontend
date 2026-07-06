@@ -41,12 +41,14 @@ export default function CouponManagement() {
     try {
       const data = { ...form, code: form.code.toUpperCase().trim(), discount: Number(form.discount) };
       if (editingCoupon) {
-        const updated = await adminService.updateCoupon(editingCoupon.couponId, data);
+        const returned = await adminService.updateCoupon(editingCoupon.couponId, data);
+        const updated = { ...editingCoupon, ...data, ...(returned || {}), couponId: editingCoupon.couponId };
         setCoupons((prev) => prev.map((c) => (c.couponId === updated.couponId ? updated : c)));
         toast.success('Coupon updated');
       } else {
-        const created = await adminService.createCoupon(data);
-        setCoupons((prev) => [...prev, created]);
+        const returned = await adminService.createCoupon(data);
+        const created = { ...data, ...(returned || {}) };
+        if (created.couponId) setCoupons((prev) => [...prev, created]);
         toast.success('Coupon created');
       }
       setModalOpen(false);

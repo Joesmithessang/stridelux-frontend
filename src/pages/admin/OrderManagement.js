@@ -4,11 +4,16 @@ import { orderService } from '../../services/orderService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-const STATUSES = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+const STATUSES = ['all', 'pending', 'processing', 'shipped', 'out-for-delivery', 'delivered', 'cancelled'];
+
+const STATUS_LABELS = {
+  all: 'All', pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
+  'out-for-delivery': 'Out for Delivery', delivered: 'Delivered', cancelled: 'Cancelled',
+};
 
 const STATUS_COLORS = {
-  pending: 'status-pending', processing: 'status-processing',
-  shipped: 'status-shipped', delivered: 'status-delivered', cancelled: 'status-cancelled',
+  pending: 'status-pending', processing: 'status-processing', shipped: 'status-shipped',
+  'out-for-delivery': 'status-out-for-delivery', delivered: 'status-delivered', cancelled: 'status-cancelled',
 };
 
 export default function OrderManagement() {
@@ -29,13 +34,18 @@ export default function OrderManagement() {
   useEffect(() => { load(); }, []);
 
   const handleStatusChange = async (orderId, newStatus) => {
+    const prevStatus = orders.find((o) => o.orderId === orderId)?.status;
+    // Apply immediately so the UI reflects the change without waiting for the API
+    setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: newStatus } : o));
+    if (detailOrder?.orderId === orderId) setDetailOrder((o) => ({ ...o, status: newStatus }));
     setUpdatingId(orderId);
     try {
       await orderService.updateStatus(orderId, newStatus);
-      setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: newStatus } : o));
-      if (detailOrder?.orderId === orderId) setDetailOrder((o) => ({ ...o, status: newStatus }));
       toast.success('Order status updated');
     } catch {
+      // Revert if the API call failed
+      setOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: prevStatus } : o));
+      if (detailOrder?.orderId === orderId) setDetailOrder((o) => ({ ...o, status: prevStatus }));
       toast.error('Failed to update status');
     } finally {
       setUpdatingId(null);
@@ -86,7 +96,7 @@ export default function OrderManagement() {
               className={`status-tab ${statusFilter === s ? 'active' : ''}`}
               onClick={() => setStatusFilter(s)}
             >
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+              {STATUS_LABELS[s]}
             </button>
           ))}
         </div>
@@ -130,7 +140,7 @@ export default function OrderManagement() {
                         disabled={updatingId === order.orderId}
                       >
                         {STATUSES.filter((s) => s !== 'all').map((s) => (
-                          <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                         ))}
                       </select>
                       <FiChevronDown className="select-chevron" />

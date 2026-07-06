@@ -14,11 +14,12 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const STATUS_CONFIG = {
-  pending:    { label: 'Pending',    icon: <FiClock />,   color: 'status-pending' },
-  processing: { label: 'Processing', icon: <FiClock />,   color: 'status-processing' },
-  shipped:    { label: 'Shipped',    icon: <FiTruck />,   color: 'status-shipped' },
-  delivered:  { label: 'Delivered',  icon: <FiCheck />,   color: 'status-delivered' },
-  cancelled:  { label: 'Cancelled',  icon: <FiX />,       color: 'status-cancelled' },
+  pending:          { label: 'Pending',          icon: <FiClock />,   color: 'status-pending' },
+  processing:       { label: 'Processing',       icon: <FiClock />,   color: 'status-processing' },
+  shipped:          { label: 'Shipped',          icon: <FiTruck />,   color: 'status-shipped' },
+  'out-for-delivery': { label: 'Out for Delivery', icon: <FiTruck />, color: 'status-out-for-delivery' },
+  delivered:        { label: 'Delivered',        icon: <FiCheck />,   color: 'status-delivered' },
+  cancelled:        { label: 'Cancelled',        icon: <FiX />,       color: 'status-cancelled' },
 };
 
 const NAV_ITEMS = [
@@ -129,12 +130,16 @@ export default function Account() {
     setSavingAddr(true);
     try {
       if (editingAddr) {
-        const updated = await addressService.update(editingAddr.addressId, addrForm);
+        const returned = await addressService.update(editingAddr.addressId, addrForm);
+        // Merge: our sent form data wins over the backend response so missing
+        // fields (e.g. 'address') from an incomplete backend response don't blank the card
+        const updated = { ...editingAddr, ...addrForm, ...(returned || {}), addressId: editingAddr.addressId };
         setAddresses((prev) => prev.map((a) => a.addressId === updated.addressId ? updated : a));
         toast.success('Address updated.');
       } else {
-        const created = await addressService.save(addrForm);
-        if (created) setAddresses((prev) => [created, ...prev]);
+        const returned = await addressService.save(addrForm);
+        const created = { ...addrForm, ...(returned || {}) };
+        if (created.addressId) setAddresses((prev) => [created, ...prev]);
         toast.success('Address saved.');
       }
       closeAddrModal();
