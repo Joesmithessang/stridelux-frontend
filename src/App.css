@@ -96,8 +96,8 @@ h3 { font-size: 1.15rem; font-weight: 600; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
 /* ── 5. Forms ─────────────────────────────────────────────── */
-.form-group { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; }
-.form-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; }
+.form-group { display: flex; flex-direction: column; gap: 0.45rem; flex: 1; }
+.form-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.07em; }
 .form-row { display: flex; gap: 1rem; flex-wrap: wrap; }
 .form-row .form-group { min-width: 0; }
 
@@ -525,6 +525,33 @@ textarea { resize: vertical; }
 .shipping-option-info strong { display: block; font-size: 0.875rem; font-weight: 600; }
 .shipping-option-info p { font-size: 0.78rem; color: var(--text-2); margin: 0.15rem 0 0; }
 .shipping-option-price { font-weight: 700; font-size: 0.9rem; white-space: nowrap; color: var(--text-1); }
+/* Saved address picker */
+.saved-addr-section { margin-bottom: 1.5rem; }
+.saved-addr-eyebrow { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-2); margin-bottom: 0.75rem; }
+.saved-addr-loading { font-size: 0.85rem; color: var(--text-3); padding: 0.5rem 0; }
+.saved-addr-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.saved-addr-card {
+  display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
+  background: var(--bg-elevated); border: 2px solid var(--border-md);
+  border-radius: var(--radius-sm); padding: 0.9rem 1.25rem; cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.saved-addr-card:hover { border-color: var(--border-lg); }
+.saved-addr-card.active { border-color: var(--accent); background: var(--accent-glow); }
+.saved-addr-card.active .shipping-radio-dot { border-color: var(--accent); background: var(--accent); }
+.saved-addr-card.active .shipping-radio-dot::after { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; position: absolute; }
+.saved-addr-body { flex: 1; min-width: 0; }
+.saved-addr-name { font-size: 0.875rem; font-weight: 600; color: var(--text-1); margin-bottom: 0.15rem; display: flex; align-items: center; gap: 0.35rem; }
+.saved-addr-detail { font-size: 0.78rem; color: var(--text-2); margin: 0; }
+.saved-addr-new .saved-addr-name { color: var(--text-2); }
+.saved-addr-new.active .saved-addr-name { color: var(--accent); }
+
+/* Checkout form layout */
+.checkout-addr-form { display: flex; flex-direction: column; gap: 1.1rem; }
+.checkout-section-sep { height: 1px; background: var(--border-md); margin: 1.75rem 0 1.5rem; }
+.checkout-subsection-title { font-size: 0.9rem; font-weight: 700; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+.form-group-sm { max-width: 140px; }
+
 .checkout-next-btn { margin-top: 1.5rem; }
 .payment-note { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-2); background: var(--bg-elevated); padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; }
 .checkout-step-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }

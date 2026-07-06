@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiLock, FiTruck, FiCheck, FiChevronRight, FiTag, FiX } from 'react-icons/fi';
+import { FiLock, FiTruck, FiCheck, FiChevronRight, FiTag, FiX, FiPlus, FiMapPin } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/orderService';
+import { addressService } from '../services/addressService';
 import api from '../services/api';
 import { USE_MOCK } from '../config/aws-config';
 import toast from 'react-hot-toast';
@@ -31,6 +32,50 @@ export default function Checkout() {
   const [couponData, setCouponData] = useState(null); // { code, discount, type }
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [addresses, setAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+
+  useEffect(() => {
+    if (isGuest) { setLoadingAddresses(false); return; }
+    setLoadingAddresses(true);
+    addressService.getAll()
+      .then((list) => {
+        const addrs = list || [];
+        setAddresses(addrs);
+        if (addrs.length > 0) {
+          applyAddress(addrs[0]);
+        } else {
+          setSelectedAddressId('new');
+        }
+      })
+      .catch(() => { setAddresses([]); setSelectedAddressId('new'); })
+      .finally(() => setLoadingAddresses(false));
+  }, [isGuest]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function applyAddress(addr) {
+    setSelectedAddressId(addr.addressId);
+    setShipping((prev) => ({
+      ...prev,
+      fullName:   addr.fullName   || prev.fullName,
+      phone:      addr.phone      || prev.phone,
+      address:    addr.address    || '',
+      city:       addr.city       || '',
+      state:      addr.state      || '',
+      postalCode: addr.postalCode || '',
+      country:    addr.country    || 'Canada',
+      ...(addr.email ? { email: addr.email } : {}),
+    }));
+  }
+
+  function handleSelectNew() {
+    setSelectedAddressId('new');
+    setShipping((prev) => ({
+      ...prev,
+      address: '', city: '', state: '', postalCode: '', country: 'Canada',
+    }));
+  }
 
   const shippingCost = shippingMethod === 'express' ? 20 : 10;
   const tax = subtotal * 0.025;
@@ -157,45 +202,97 @@ export default function Checkout() {
             {step === 0 && (
               <form className="checkout-form-card" onSubmit={handleShippingSubmit}>
                 <h2><FiTruck /> Shipping Information</h2>
+
                 {isGuest && (
                   <div className="guest-notice">
                     <p>Checking out as guest. <Link to="/login">Sign in</Link> to save your details.</p>
                   </div>
                 )}
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Full Name *</label>
-                    <input required value={shipping.fullName} onChange={(e) => setShipping({ ...shipping, fullName: e.target.value })} placeholder="Jane Smith" />
-                  </div>
-                  <div className="form-group">
-                    <label>Email Address *</label>
-                    <input required type="email" value={shipping.email} onChange={(e) => setShipping({ ...shipping, email: e.target.value })} placeholder="jane@example.com" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Phone Number *</label>
-                  <input required type="tel" value={shipping.phone} onChange={(e) => setShipping({ ...shipping, phone: e.target.value })} placeholder="+1 (416) 555-0100" />
-                </div>
-                <div className="form-group">
-                  <label>Street Address *</label>
-                  <input required value={shipping.address} onChange={(e) => setShipping({ ...shipping, address: e.target.value })} placeholder="123 Main St" />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>City *</label>
-                    <input required value={shipping.city} onChange={(e) => setShipping({ ...shipping, city: e.target.value })} placeholder="Toronto" />
-                  </div>
-                  <div className="form-group">
-                    <label>Province / State</label>
-                    <input value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} placeholder="ON" />
-                  </div>
-                  <div className="form-group">
-                    <label>Postal Code *</label>
-                    <input required value={shipping.postalCode} onChange={(e) => setShipping({ ...shipping, postalCode: e.target.value })} placeholder="M5V 2T6" />
-                  </div>
-                </div>
 
-                <h3 style={{ marginTop: '1.5rem' }}>Shipping Method</h3>
+                {/* ── Saved address picker ── */}
+                {!isGuest && (
+                  <div className="saved-addr-section">
+                    <p className="saved-addr-eyebrow"><FiMapPin /> Saved addresses</p>
+
+                    {loadingAddresses ? (
+                      <p className="saved-addr-loading">Loading your addresses…</p>
+                    ) : addresses.length === 0 ? null : (
+                      <div className="saved-addr-list">
+                        {addresses.map((addr) => (
+                          <button
+                            key={addr.addressId}
+                            type="button"
+                            className={`saved-addr-card ${selectedAddressId === addr.addressId ? 'active' : ''}`}
+                            onClick={() => applyAddress(addr)}
+                          >
+                            <span className="shipping-radio-dot" />
+                            <div className="saved-addr-body">
+                              <p className="saved-addr-name">{addr.fullName}</p>
+                              <p className="saved-addr-detail">{addr.address}, {addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}</p>
+                              {addr.phone && <p className="saved-addr-detail">{addr.phone}</p>}
+                            </div>
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          className={`saved-addr-card saved-addr-new ${selectedAddressId === 'new' ? 'active' : ''}`}
+                          onClick={handleSelectNew}
+                        >
+                          <span className="shipping-radio-dot" />
+                          <div className="saved-addr-body">
+                            <p className="saved-addr-name"><FiPlus /> Use a different address</p>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Address form — visible when no saved address selected ── */}
+                {(selectedAddressId === 'new' || isGuest || (!loadingAddresses && addresses.length === 0)) && (
+                  <div className="checkout-addr-form">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Full Name *</label>
+                        <input required value={shipping.fullName} onChange={(e) => setShipping({ ...shipping, fullName: e.target.value })} placeholder="Jane Smith" />
+                      </div>
+                      <div className="form-group">
+                        <label>Email Address *</label>
+                        <input required type="email" value={shipping.email} onChange={(e) => setShipping({ ...shipping, email: e.target.value })} placeholder="jane@example.com" />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Phone Number *</label>
+                      <input required type="tel" value={shipping.phone} onChange={(e) => setShipping({ ...shipping, phone: e.target.value })} placeholder="+1 (416) 555-0100" />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Street Address *</label>
+                      <input required value={shipping.address} onChange={(e) => setShipping({ ...shipping, address: e.target.value })} placeholder="123 Main St" />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>City *</label>
+                        <input required value={shipping.city} onChange={(e) => setShipping({ ...shipping, city: e.target.value })} placeholder="Toronto" />
+                      </div>
+                      <div className="form-group form-group-sm">
+                        <label>Province / State</label>
+                        <input value={shipping.state} onChange={(e) => setShipping({ ...shipping, state: e.target.value })} placeholder="ON" />
+                      </div>
+                      <div className="form-group form-group-sm">
+                        <label>Postal Code *</label>
+                        <input required value={shipping.postalCode} onChange={(e) => setShipping({ ...shipping, postalCode: e.target.value })} placeholder="M5V 2T6" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="checkout-section-sep" />
+
+                <h3 className="checkout-subsection-title">Shipping Method</h3>
                 <div className="shipping-options">
                   <label className={`shipping-option ${shippingMethod === 'standard' ? 'active' : ''}`}>
                     <input type="radio" name="shipping" value="standard" checked={shippingMethod === 'standard'} onChange={() => setShippingMethod('standard')} />
