@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { FiCheck, FiPackage, FiArrowRight, FiHome } from 'react-icons/fi';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { orderService } from '../services/orderService';
 import { addressService } from '../services/addressService';
 import { useAuth } from '../context/AuthContext';
+import { USE_MOCK } from '../config/aws-config';
 
 export default function OrderConfirmation() {
   const { orderId: rawOrderId } = useParams();
@@ -17,7 +19,13 @@ export default function OrderConfirmation() {
   useEffect(() => {
     if (!orderId) return;
 
-    const tryFetch = () => {
+    const tryFetch = async () => {
+      // Wait for Amplify to restore the Cognito session from localStorage before
+      // making the authenticated order fetch — prevents 401s after the Stripe redirect
+      if (!USE_MOCK) {
+        try { await fetchAuthSession(); } catch { /* proceed as guest */ }
+      }
+
       orderService.getById(orderId)
         .then((o) => {
           setOrder(o);
@@ -33,7 +41,10 @@ export default function OrderConfirmation() {
         });
     };
 
-    tryFetch();
+    // 800ms initial delay — gives Amplify time to hydrate the session after
+    // the cross-origin redirect from Stripe before the first attempt fires
+    const timer = setTimeout(tryFetch, 800);
+    return () => clearTimeout(timer);
   }, [orderId, isGuest]);
 
   return (
