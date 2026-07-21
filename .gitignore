@@ -10,6 +10,15 @@
 
 # production
 /build
+/build/.lambda-temp
+
+# Lambda deployment temp files
+lambdas/.lambda-temp
+/terraform/lambda-placeholder
+*.zip
+
+# Lambda function node_modules — installed fresh by CI (npm ci --production)
+lambdas/*/node_modules/
 
 # misc
 .DS_Store

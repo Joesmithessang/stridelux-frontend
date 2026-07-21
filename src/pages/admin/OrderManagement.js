@@ -4,16 +4,16 @@ import { orderService } from '../../services/orderService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-const STATUSES = ['all', 'pending', 'processing', 'shipped', 'out-for-delivery', 'delivered', 'cancelled'];
+const STATUSES = ['all', 'pending', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'cancelled'];
 
 const STATUS_LABELS = {
   all: 'All', pending: 'Pending', processing: 'Processing', shipped: 'Shipped',
-  'out-for-delivery': 'Out for Delivery', delivered: 'Delivered', cancelled: 'Cancelled',
+  out_for_delivery: 'Out for Delivery', delivered: 'Delivered', cancelled: 'Cancelled',
 };
 
 const STATUS_COLORS = {
   pending: 'status-pending', processing: 'status-processing', shipped: 'status-shipped',
-  'out-for-delivery': 'status-out-for-delivery', delivered: 'status-delivered', cancelled: 'status-cancelled',
+  out_for_delivery: 'status-out-for-delivery', delivered: 'status-delivered', cancelled: 'status-cancelled',
 };
 
 export default function OrderManagement() {
@@ -136,7 +136,7 @@ export default function OrderManagement() {
                       <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                        className={`status-select ${STATUS_COLORS[order.status] || ''}`}
+                        className={`status-select ${STATUS_COLORS[order.status] || 'status-unknown'}`}
                         disabled={updatingId === order.orderId}
                       >
                         {STATUSES.filter((s) => s !== 'all').map((s) => (

@@ -89,6 +89,15 @@ export const adminService = {
     return api.get('/admin/users');
   },
 
+  async updateCustomer(id, data) {
+    if (USE_MOCK) {
+      const customer = mockCustomers.find((c) => c.id === id);
+      if (customer) Object.assign(customer, data);
+      return customer || null;
+    }
+    return api.put(`/admin/customer/${id}`, data);
+  },
+
   async createEmployee(data) {
     if (USE_MOCK) {
       const employees = getEmployeeStore();

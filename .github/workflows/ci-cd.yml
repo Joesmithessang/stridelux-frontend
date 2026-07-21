@@ -140,11 +140,73 @@ jobs:
 
       - name: Write deployment summary
         run: |
-          echo "### Deployment successful" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend deployment successful ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| **URL** | https://${{ vars.CLOUDFRONT_DOMAIN }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Cache** | Invalidated |" >> $GITHUB_STEP_SUMMARY
           echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Time** | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+
+  # ── Job 3: Deploy Lambda Functions ────────────────────────
+  # Runs in parallel with the frontend deploy job (both need ci).
+  # Only deploys functions whose source has changed since the
+  # previous commit. Skips entirely if nothing in lambdas/ changed.
+  # ──────────────────────────────────────────────────────────
+  deploy-lambdas:
+    name: Deploy Lambda Functions
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2    # needed so git diff HEAD~1 HEAD works
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install script dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Check for Lambda code changes
+        id: check_lambda
+        run: node scripts/check-lambda-changes.js
+        continue-on-error: true
+
+      - name: Configure AWS credentials
+        if: steps.check_lambda.outcome == 'success'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy Lambda functions
+        if: steps.check_lambda.outcome == 'success'
+        run: node scripts/deploy-lambdas.js
+
+      - name: Write Lambda deployment summary
+        if: always()
+        env:
+          LAMBDA_OUTCOME: ${{ steps.check_lambda.outcome }}
+        run: |
+          if [ "$LAMBDA_OUTCOME" == "success" ]; then
+            echo "### Lambda deployment successful ✅" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Lambda deployment skipped ⏭️" >> $GITHUB_STEP_SUMMARY
+            echo "No Lambda code changes detected." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered by** | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **Time** | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
