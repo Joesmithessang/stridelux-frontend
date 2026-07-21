@@ -12,7 +12,25 @@ const TABS = [
   { key: 'team', label: 'Team & Staff', icon: <FiUserCheck /> },
 ];
 
-const STATUS_CLASS = { active: 'status-delivered', inactive: 'status-cancelled' };
+const STATUS_CLASS = {
+  active:   'status-delivered',
+  inactive: 'status-cancelled',
+  unknown:  'status-unknown',
+};
+
+// Normalize raw DB value → display-safe status key.
+// Never let a missing/blank value read as 'active' — that's a false positive.
+function resolveStatus(raw) {
+  if (!raw || typeof raw !== 'string' || !raw.trim()) return 'unknown';
+  const s = raw.trim().toLowerCase();
+  return STATUS_CLASS[s] ? s : 'unknown';
+}
+
+function StatusBadge({ status }) {
+  const key = resolveStatus(status);
+  const label = key === 'unknown' ? 'Unknown' : key.charAt(0).toUpperCase() + key.slice(1);
+  return <span className={`admin-status ${STATUS_CLASS[key]}`}>{label}</span>;
+}
 
 const ROLES = [
   'Administrator',
@@ -39,6 +57,11 @@ export default function UserManagement() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [customerStatus, setCustomerStatus] = useState('');
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   useEffect(() => {
     adminService.getUsers()
@@ -79,7 +102,7 @@ export default function UserManagement() {
       phone: employee.phone || '',
       role: employee.role || '',
       department: employee.department || '',
-      status: employee.status || 'active',
+      status: employee.status?.trim() || '',
       joinedAt: employee.joinedAt ? employee.joinedAt.split('T')[0] : today(),
     });
     setModalOpen(true);
@@ -89,6 +112,40 @@ export default function UserManagement() {
     setModalOpen(false);
     setEditingEmployee(null);
     setForm(EMPTY_FORM);
+  };
+
+  const openEditCustomer = (customer) => {
+    setEditingCustomer(customer);
+    setCustomerStatus(customer.status?.trim() || '');
+    setCustomerModalOpen(true);
+  };
+
+  const closeCustomerModal = () => {
+    setCustomerModalOpen(false);
+    setEditingCustomer(null);
+    setCustomerStatus('');
+  };
+
+  const handleCustomerSave = async (e) => {
+    e.preventDefault();
+    setSavingCustomer(true);
+    try {
+      // Send null (not undefined) when clearing — undefined is silently dropped
+      // by JSON.stringify and won't trigger the Lambda's REMOVE branch
+      const payload = { status: customerStatus || null };
+      const returned = await adminService.updateCustomer(editingCustomer.id, payload);
+      const updated = { ...editingCustomer, ...payload, ...(returned || {}) };
+      setData((prev) => ({
+        ...prev,
+        customers: prev.customers.map((c) => (c.id === updated.id ? updated : c)),
+      }));
+      toast.success('Customer updated.');
+      closeCustomerModal();
+    } catch (err) {
+      toast.error(err?.message || 'Failed to update customer.');
+    } finally {
+      setSavingCustomer(false);
+    }
   };
 
   const handleSave = async (e) => {
@@ -190,11 +247,12 @@ export default function UserManagement() {
                   <th>Orders</th>
                   <th>Total Spent</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {customers.length === 0 ? (
-                  <tr><td colSpan={6} className="admin-empty">No customers found.</td></tr>
+                  <tr><td colSpan={7} className="admin-empty">No customers found.</td></tr>
                 ) : customers.map((u) => (
                   <tr key={u.id}>
                     <td>
@@ -210,10 +268,11 @@ export default function UserManagement() {
                     <td>{new Date(u.joinedAt).toLocaleDateString()}</td>
                     <td>{u.totalOrders}</td>
                     <td><strong>${u.totalSpent?.toFixed(2)}</strong></td>
+                    <td><StatusBadge status={u.status} /></td>
                     <td>
-                      <span className={`admin-status ${STATUS_CLASS[u.status] || ''}`}>
-                        {u.status}
-                      </span>
+                      <button className="action-btn edit-btn" title="Edit status" onClick={() => openEditCustomer(u)}>
+                        <FiEdit2 />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -261,11 +320,7 @@ export default function UserManagement() {
                     <td>{u.role}</td>
                     <td><span className="dept-badge">{u.department}</span></td>
                     <td>{new Date(u.joinedAt).toLocaleDateString()}</td>
-                    <td>
-                      <span className={`admin-status ${STATUS_CLASS[u.status] || ''}`}>
-                        {u.status}
-                      </span>
-                    </td>
+                    <td><StatusBadge status={u.status} /></td>
                     <td>
                       {deletingId === u.id ? (
                         <div className="action-btns">
@@ -311,7 +366,46 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* ── Create / Edit modal ── */}
+      {/* ── Customer status edit modal ── */}
+      {customerModalOpen && editingCustomer && (
+        <div className="admin-modal-overlay" onClick={closeCustomerModal}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-header">
+              <h2>Edit Customer</h2>
+              <button className="modal-close-btn" onClick={closeCustomerModal}><FiX /></button>
+            </div>
+            <form onSubmit={handleCustomerSave} className="admin-modal-form">
+              <div className="form-group">
+                <label>Name</label>
+                <input type="text" value={editingCustomer.name} disabled style={{ opacity: 0.5 }} />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" value={editingCustomer.email} disabled style={{ opacity: 0.5 }} />
+              </div>
+              <div className="form-group">
+                <label>Account Status</label>
+                <select value={customerStatus} onChange={(e) => setCustomerStatus(e.target.value)}>
+                  <option value="">Unknown / not set</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: '0.35rem' }}>
+                  Selecting "Unknown / not set" clears the status attribute in the database.
+                </p>
+              </div>
+              <div className="admin-modal-footer">
+                <button type="button" className="btn btn-outline btn-sm" onClick={closeCustomerModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={savingCustomer}>
+                  {savingCustomer ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create / Edit employee modal ── */}
       {modalOpen && (
         <div className="admin-modal-overlay" onClick={closeModal}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
@@ -339,6 +433,7 @@ export default function UserManagement() {
                 <div className="form-group">
                   <label>Status</label>
                   <select {...field('status')}>
+                    <option value="">Unknown / not set</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>

@@ -6,8 +6,8 @@ import { productService } from '../../services/productService';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const STATUS_COLORS = {
-  pending: 'status-pending', processing: 'status-processing',
-  shipped: 'status-shipped', delivered: 'status-delivered', cancelled: 'status-cancelled',
+  pending: 'status-pending', processing: 'status-processing', shipped: 'status-shipped',
+  out_for_delivery: 'status-out-for-delivery', delivered: 'status-delivered', cancelled: 'status-cancelled',
 };
 
 export default function AdminDashboard() {
@@ -125,8 +125,8 @@ export default function AdminDashboard() {
                     <td>{order.customerName || order.shippingInfo?.fullName || 'Guest'}</td>
                     <td>${order.total?.toFixed(2)}</td>
                     <td>
-                      <span className={`admin-status ${STATUS_COLORS[order.status] || ''}`}>
-                        {order.status}
+                      <span className={`admin-status ${STATUS_COLORS[order.status] || 'status-unknown'}`}>
+                        {order.status?.replace(/_/g, ' ') || 'Unknown'}
                       </span>
                     </td>
                   </tr>

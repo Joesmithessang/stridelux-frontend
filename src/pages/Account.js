@@ -17,7 +17,7 @@ const STATUS_CONFIG = {
   pending:          { label: 'Pending',          icon: <FiClock />,   color: 'status-pending' },
   processing:       { label: 'Processing',       icon: <FiClock />,   color: 'status-processing' },
   shipped:          { label: 'Shipped',          icon: <FiTruck />,   color: 'status-shipped' },
-  'out-for-delivery': { label: 'Out for Delivery', icon: <FiTruck />, color: 'status-out-for-delivery' },
+  out_for_delivery: { label: 'Out for Delivery', icon: <FiTruck />, color: 'status-out-for-delivery' },
   delivered:        { label: 'Delivered',        icon: <FiCheck />,   color: 'status-delivered' },
   cancelled:        { label: 'Cancelled',        icon: <FiX />,       color: 'status-cancelled' },
 };
@@ -218,7 +218,11 @@ export default function Account() {
                 ) : (
                   <div className="orders-list">
                     {orders.map((order) => {
-                      const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+                      const cfg = STATUS_CONFIG[order.status] || {
+                        label: order.status?.replace(/_/g, ' ') || 'Unknown',
+                        icon: null,
+                        color: 'status-unknown',
+                      };
                       return (
                         <div key={order.orderId} className="order-card">
                           <div className="order-card-header">
