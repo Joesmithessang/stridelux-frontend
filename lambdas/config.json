@@ -21,7 +21,7 @@
       "iamRole": "stridelux-orders-fn-role",
       "triggers": ["api-gateway"],
       "npmInstall": true,
-      "bundledDependencies": ["@aws-sdk/client-dynamodb", "@aws-sdk/client-sesv2", "@aws-sdk/lib-dynamodb"]
+      "bundledDependencies": ["@aws-sdk/client-sesv2"]
     },
     "admin": {
       "directory": "stridelux-admin-fn",
@@ -32,7 +32,7 @@
       "iamRole": "stridelux-admin-fn-role",
       "triggers": ["api-gateway"],
       "npmInstall": true,
-      "bundledDependencies": ["@aws-sdk/client-cognito-identity-provider", "@aws-sdk/client-dynamodb", "@aws-sdk/client-sesv2", "@aws-sdk/lib-dynamodb"],
+      "bundledDependencies": ["@aws-sdk/client-sesv2"],
       "environmentVariables": {
         "COGNITO_USER_POOL_ID": "${COGNITO_USER_POOL_ID}",
         "FRONTEND_URL": "${FRONTEND_URL}",
