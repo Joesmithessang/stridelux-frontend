@@ -68,21 +68,33 @@ function getChangedLambdaFiles() {
 }
 
 /**
- * Extract function names from changed files
+ * Extract function config keys from changed files.
+ * Matches the changed directory name against config.directory entries
+ * because config keys (e.g. "admin") differ from directory names
+ * (e.g. "stridelux-admin-fn").
  */
-function extractFunctionNamesFromChanges(changedFiles) {
+function extractFunctionNamesFromChanges(changedFiles, allFunctions) {
   const functionNames = new Set();
 
-  changedFiles.forEach(file => {
-    // Skip config.json and README
-    if (file === 'lambdas/config.json' || file === 'lambdas/README.md') {
-      return;
-    }
+  // Build a reverse map: directory name → config key
+  const dirToKey = {};
+  Object.entries(allFunctions).forEach(([key, cfg]) => {
+    dirToKey[cfg.directory] = key;
+  });
 
-    // Extract: lambdas/function-name/... → function-name
+  changedFiles.forEach(file => {
+    if (file === 'lambdas/config.json' || file === 'lambdas/README.md') return;
+
+    // Extract directory segment: lambdas/<dir>/... → <dir>
     const match = file.match(/^lambdas\/([^/]+)\//);
-    if (match) {
-      functionNames.add(match[1]);
+    if (!match) return;
+
+    const changedDir = match[1];
+    const configKey = dirToKey[changedDir];
+    if (configKey) {
+      functionNames.add(configKey);
+    } else {
+      console.warn(`  ⚠️  Changed dir "${changedDir}" not found in config — skipping`);
     }
   });
 
@@ -274,7 +286,7 @@ async function main() {
     console.log(`   Changed files: ${changedFiles.length}`);
     changedFiles.forEach(f => console.log(`     - ${f}`));
 
-    functionsToDeployNames = extractFunctionNamesFromChanges(changedFiles);
+    functionsToDeployNames = extractFunctionNamesFromChanges(changedFiles, allFunctions);
     if (functionsToDeployNames.length === 0) {
       console.log('\n   No Lambda functions affected. Skipping deployment.\n');
       return;

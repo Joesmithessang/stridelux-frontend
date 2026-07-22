@@ -16,19 +16,19 @@ const { execSync } = require('child_process');
 
 function checkForLambdaChanges() {
   try {
-    // Get the comparison base (main for production, develop for staging)
-    let base = 'origin/main';
-
-    try {
-      // Check if we're on a PR
-      if (process.env.GITHUB_BASE_REF) {
-        base = process.env.GITHUB_BASE_REF;
-      }
-    } catch (e) {
-      // Continue with default base
+    // On a push to main (after PR merge), origin/main == HEAD so the diff
+    // is always empty. Use HEAD~1 instead — fetch-depth: 2 makes it available.
+    // On a pull_request event, compare against the target branch on origin.
+    let base;
+    if (process.env.GITHUB_EVENT_NAME === 'push') {
+      base = 'HEAD~1';
+    } else if (process.env.GITHUB_BASE_REF) {
+      base = `origin/${process.env.GITHUB_BASE_REF}`;
+    } else {
+      base = 'origin/main';
     }
 
-    console.log(`Comparing against: ${base}`);
+    console.log(`Comparing against: ${base} (event: ${process.env.GITHUB_EVENT_NAME || 'local'})`);
 
     // Get list of changed files in lambdas/ directory
     const output = execSync(
