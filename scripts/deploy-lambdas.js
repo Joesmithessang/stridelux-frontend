@@ -157,19 +157,23 @@ function zipLambdaFunction(functionName, config) {
 
   console.log(`  📦 Zipping: ${functionDir}`);
 
-  // Use system zip command (works on Windows with Git Bash or WSL)
+  // Lambda requires index.js (and node_modules/ when present) at the ROOT
+  // of the zip — not nested under a subdirectory. Use different strategies:
+  //   npmInstall=true  → cd into the function dir and zip everything (.)
+  //   npmInstall=false → zip just index.js with -j to strip the path prefix
   try {
-    // For Windows, use PowerShell Compress-Archive
     if (process.platform === 'win32') {
       const psCommand = `
         $ProgressPreference = 'SilentlyContinue';
         Compress-Archive -Path "${functionDir}/*" -DestinationPath "${zipPath}" -Force
       `;
       execSync(`powershell -Command "${psCommand}"`, { stdio: 'pipe' });
+    } else if (config.npmInstall) {
+      // cd into the function directory so node_modules/ and index.js land at zip root
+      execSync(`cd "${functionDir}" && zip -r "${zipPath}" .`, { stdio: 'pipe' });
     } else {
-      // For Unix/Linux
-      const cmd = `cd "${LAMBDAS_DIR}" && zip -r "${zipPath}" "${config.directory}"`;
-      execSync(cmd, { stdio: 'pipe' });
+      // -j junk-paths: strips the directory prefix so index.js is at zip root
+      execSync(`zip -j "${zipPath}" "${path.join(functionDir, 'index.js')}"`, { stdio: 'pipe' });
     }
 
     const stats = fs.statSync(zipPath);
