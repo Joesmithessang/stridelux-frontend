@@ -223,11 +223,16 @@ export default function Account() {
                         icon: null,
                         color: 'status-unknown',
                       };
+                      const shortId = String(order.orderId || '').slice(0, 8).toUpperCase();
                       return (
-                        <div key={order.orderId} className="order-card">
+                        <Link
+                          key={order.orderId}
+                          to={`/account/orders/${order.orderId}`}
+                          className="order-card order-card-link"
+                        >
                           <div className="order-card-header">
                             <div>
-                              <p className="order-id">{order.orderId}</p>
+                              <p className="order-id">#{shortId}</p>
                               <p className="order-date">{new Date(order.createdAt).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             </div>
                             <div className={`order-status ${cfg.color}`}>
@@ -235,21 +240,27 @@ export default function Account() {
                             </div>
                           </div>
                           <div className="order-items-preview">
-                            {order.items.map((item) => (
-                              <div key={item.productId + item.size} className="order-item-row">
-                                <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity='0.3'; }} />
-                                <div>
-                                  <p>{item.name}</p>
-                                  <p className="order-item-meta">Size {item.size} · Qty {item.quantity}</p>
+                            {order.items.map((item, i) => {
+                              const size = item.selectedSize || item.size;
+                              return (
+                                <div key={i} className="order-item-row">
+                                  <img src={item.image} alt={item.name} onError={(e) => { e.target.style.opacity = '0.3'; }} />
+                                  <div>
+                                    <p>{item.name}</p>
+                                    <p className="order-item-meta">
+                                      {[size && `Size ${size}`, item.quantity && `Qty ${item.quantity}`].filter(Boolean).join(' · ')}
+                                    </p>
+                                  </div>
+                                  <span>${(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}</span>
                                 </div>
-                                <span>${(item.price * item.quantity).toFixed(2)}</span>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                           <div className="order-card-footer">
-                            <span>Total: <strong>${order.total.toFixed(2)}</strong></span>
+                            <span>Total: <strong>${Number(order.total || 0).toFixed(2)}</strong></span>
+                            <span className="order-card-view">View details <FiChevronRight /></span>
                           </div>
-                        </div>
+                        </Link>
                       );
                     })}
                   </div>

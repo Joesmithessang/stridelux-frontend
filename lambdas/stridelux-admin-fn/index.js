@@ -21,6 +21,7 @@ const client         = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const ORDERS_TABLE   = "stridelux-orders";
 const PRODUCTS_TABLE = "stridelux-products";
 const USERS_TABLE    = "stridelux-users";
+const VALID_USER_STATUSES = ["active", "inactive"];
 
 // ── Professional status emails ────────────────────────────────────────────────
 const STATUS_EMAIL_COPY = {
@@ -100,7 +101,7 @@ function buildStatusEmail(order, status) {
     "Customer";
 
   const orderUrl =
-    `${SITE_URL}/order-confirmation/${encodeURIComponent(order.orderId)}`;
+    `${SITE_URL}/account/orders/${encodeURIComponent(order.orderId)}`;
 
   const items = Array.isArray(order.items) ? order.items : [];
   const subtotal = Number(order.subtotal || 0);
@@ -194,7 +195,7 @@ ${SITE_URL}
                     <td style="color:#fff;font-size:27px;font-weight:900;letter-spacing:3px">
                       STRIDELUX
                     </td>
-                    <td align="right" style="color:#d6ad60;font-size:13px;font-weight:800">
+                    <td align="right" style="color:#c9a227;font-size:13px;font-weight:800">
                       ${copy.label}
                     </td>
                   </tr>
@@ -204,13 +205,13 @@ ${SITE_URL}
 
             <tr>
               <td style="padding:42px 34px 25px">
-                <div style="width:58px;height:58px;line-height:58px;text-align:center;background:#d6ad60;border-radius:50%;font-size:29px;font-weight:800">
+                <div style="width:58px;height:58px;line-height:58px;text-align:center;background:#c9a227;border-radius:50%;font-size:29px;font-weight:800">
                   ${copy.icon}
                 </div>
 
                 <h1 style="margin:24px 0 13px;font-size:30px;line-height:1.25">
                   ${copy.heading},
-                  <span style="color:#b58c42">${escapeHtml(customerName)}</span>
+                  <span style="color:#c9a227">${escapeHtml(customerName)}</span>
                 </h1>
 
                 <p style="margin:0;color:#5e5e5e;font-size:16px;line-height:1.7">
@@ -252,13 +253,13 @@ ${SITE_URL}
                   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
                     <thead>
                       <tr>
-                        <th align="left" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">
+                        <th align="left" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">
                           ITEM
                         </th>
-                        <th align="center" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">
+                        <th align="center" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">
                           QTY
                         </th>
-                        <th align="right" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">
+                        <th align="right" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">
                           PRICE
                         </th>
                       </tr>
@@ -293,7 +294,7 @@ ${SITE_URL}
                       <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;font-size:17px;font-weight:900">
                         Total
                       </td>
-                      <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;color:#b58c42;font-size:20px;font-weight:900">
+                      <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;color:#c9a227;font-size:20px;font-weight:900">
                         ${formatMoney(total)}
                       </td>
                     </tr>
@@ -305,10 +306,10 @@ ${SITE_URL}
               <td style="padding:0 34px 35px">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                   <tr>
-                    <td align="center" style="background:#050505;border-radius:8px">
+                    <td align="center" style="background:#c9a227;border-radius:8px">
                       <a
                         href="${escapeHtml(orderUrl)}"
-                        style="display:block;padding:16px 24px;color:#fff;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.7px"
+                        style="display:block;padding:16px 24px;color:#111;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.7px"
                       >
                         VIEW YOUR ORDER
                       </a>
@@ -524,6 +525,8 @@ exports.handler = async (event) => {
 
       const users = usersResult.Items || [];
 
+      // Fix: don't hardcode status — read what's actually stored,
+      // fall back to null (not "active") so the frontend can show "Unknown"
       const customers = users
         .filter(u => (u.role || "customer") === "customer")
         .map(u => ({
@@ -534,7 +537,7 @@ exports.handler = async (event) => {
           joinedAt:    u.createdAt,
           totalOrders: statsMap[u.email]?.totalOrders || 0,
           totalSpent:  statsMap[u.email]?.totalSpent  || 0,
-          status:      "active"
+          status:      u.status ?? null
         }));
 
       const employees = users
@@ -547,7 +550,7 @@ exports.handler = async (event) => {
           role:       u.role,
           department: u.department || "Administration",
           joinedAt:   u.createdAt,
-          status:     "active"
+          status:     u.status ?? null
         }));
 
       return ok({ customers, employees });
@@ -685,18 +688,75 @@ exports.handler = async (event) => {
       });
     }
 
-    // ── PUT /admin/employees/:id ───────────────────────────────────────────
+    // ── PUT /admin/employees/:id ────────────────────────────────────────────
     if (method === "PUT" && path.includes("employees") && pathParams.id) {
-      const updates   = { ...body, updatedAt: new Date().toISOString() };
+      const { status, ...rest } = body;
+
+      if (status && !VALID_USER_STATUSES.includes(status)) {
+        return badRequest(`Invalid status. Must be one of: ${VALID_USER_STATUSES.join(", ")}`);
+      }
+
+      const updates = { ...rest, updatedAt: new Date().toISOString() };
       delete updates.userId;
+
       const setExprs  = Object.keys(updates).map(k => `#${k} = :${k}`);
       const exprNames = Object.fromEntries(Object.keys(updates).map(k => [`#${k}`, k]));
       const exprVals  = Object.fromEntries(Object.keys(updates).map(k => [`:${k}`, updates[k]]));
 
+      let updateExpr = `SET ${setExprs.join(", ")}`;
+
+      if (status) {
+        setExprs.push("#status = :status");
+        exprNames["#status"] = "status";
+        exprVals[":status"] = status;
+        updateExpr = `SET ${setExprs.join(", ")}`;
+      } else if (status === "" || status === null) {
+        updateExpr += " REMOVE #status";
+        exprNames["#status"] = "status";
+      }
+
       const result = await client.send(new UpdateCommand({
         TableName: USERS_TABLE,
         Key: { userId: pathParams.id },
-        UpdateExpression: `SET ${setExprs.join(", ")}`,
+        UpdateExpression: updateExpr,
+        ExpressionAttributeNames: exprNames,
+        ExpressionAttributeValues: exprVals,
+        ReturnValues: "ALL_NEW"
+      }));
+      return ok(result.Attributes);
+    }
+
+    // ── PUT /admin/customer/:id ─────────────────────────────────────────────
+    if (method === "PUT" && path.includes("customer") && pathParams.id) {
+      const { status, ...rest } = body;
+
+      if (status && !VALID_USER_STATUSES.includes(status)) {
+        return badRequest(`Invalid status. Must be one of: ${VALID_USER_STATUSES.join(", ")}`);
+      }
+
+      const updates = { ...rest, updatedAt: new Date().toISOString() };
+      delete updates.userId;
+
+      const setExprs  = Object.keys(updates).map(k => `#${k} = :${k}`);
+      const exprNames = Object.fromEntries(Object.keys(updates).map(k => [`#${k}`, k]));
+      const exprVals  = Object.fromEntries(Object.keys(updates).map(k => [`:${k}`, updates[k]]));
+
+      let updateExpr = `SET ${setExprs.join(", ")}`;
+
+      if (status) {
+        setExprs.push("#status = :status");
+        exprNames["#status"] = "status";
+        exprVals[":status"] = status;
+        updateExpr = `SET ${setExprs.join(", ")}`;
+      } else if (status === "" || status === null) {
+        updateExpr += " REMOVE #status";
+        exprNames["#status"] = "status";
+      }
+
+      const result = await client.send(new UpdateCommand({
+        TableName: USERS_TABLE,
+        Key: { userId: pathParams.id },
+        UpdateExpression: updateExpr,
         ExpressionAttributeNames: exprNames,
         ExpressionAttributeValues: exprVals,
         ReturnValues: "ALL_NEW"

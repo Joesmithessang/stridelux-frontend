@@ -27,6 +27,7 @@ import ForgotPassword from '../pages/ForgotPassword';
 import Terms from '../pages/Terms';
 import Privacy from '../pages/Privacy';
 import Account from '../pages/Account';
+import OrderDetail from '../pages/OrderDetail';
 import NotFound from '../pages/NotFound';
 
 import AdminLayout from '../pages/admin/AdminLayout';
@@ -120,9 +121,10 @@ export default function AppRoutes() {
                   <Route path="/orders" element={<PrivateRoute><Navigate to="/account/orders" replace /></PrivateRoute>} />
 
                   {/* Authenticated customers */}
-                  <Route path="/account"          element={<PrivateRoute><Account /></PrivateRoute>} />
-                  <Route path="/account/orders"   element={<PrivateRoute><Account /></PrivateRoute>} />
-                  <Route path="/account/settings" element={<PrivateRoute><Account /></PrivateRoute>} />
+                  <Route path="/account"                      element={<PrivateRoute><Account /></PrivateRoute>} />
+                  <Route path="/account/orders"               element={<PrivateRoute><Account /></PrivateRoute>} />
+                  <Route path="/account/orders/:orderId"      element={<PrivateRoute><OrderDetail /></PrivateRoute>} />
+                  <Route path="/account/settings"             element={<PrivateRoute><Account /></PrivateRoute>} />
 
                   <Route path="*" element={<NotFound />} />
                 </Routes>
