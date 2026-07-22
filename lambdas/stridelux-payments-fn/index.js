@@ -56,7 +56,7 @@ function buildConfirmationEmail(order) {
     "Customer";
 
   const orderUrl =
-    `${SITE_URL}/order-confirmation/${encodeURIComponent(order.orderId)}`;
+    `${SITE_URL}/account/orders/${encodeURIComponent(order.orderId)}`;
 
   const subtotal = Number(order.subtotal || 0);
   const shipping = Number(order.shippingCost || 0);
@@ -322,7 +322,7 @@ ${SITE_URL}
                         <td
                           align="right"
                           style="
-                            color:#d6ad60;
+                            color:#c9a227;
                             font-size:13px;
                             font-weight:700;
                           "
@@ -343,7 +343,7 @@ ${SITE_URL}
                         height:58px;
                         line-height:58px;
                         text-align:center;
-                        background:#d6ad60;
+                        background:#c9a227;
                         color:#111111;
                         border-radius:50%;
                         font-size:29px;
@@ -363,7 +363,7 @@ ${SITE_URL}
                       "
                     >
                       Thank you for your order,
-                      <span style="color:#b58c42;">
+                      <span style="color:#c9a227;">
                         ${escapeHtml(customerName)}
                       </span>
                     </h1>
@@ -485,7 +485,7 @@ ${SITE_URL}
                             align="left"
                             style="
                               padding:12px 8px;
-                              border-bottom:2px solid #111111;
+                              border-bottom:2px solid #c9a227;
                               color:#555555;
                               font-size:12px;
                               text-transform:uppercase;
@@ -499,7 +499,7 @@ ${SITE_URL}
                             align="center"
                             style="
                               padding:12px 8px;
-                              border-bottom:2px solid #111111;
+                              border-bottom:2px solid #c9a227;
                               color:#555555;
                               font-size:12px;
                               text-transform:uppercase;
@@ -513,7 +513,7 @@ ${SITE_URL}
                             align="right"
                             style="
                               padding:12px 8px;
-                              border-bottom:2px solid #111111;
+                              border-bottom:2px solid #c9a227;
                               color:#555555;
                               font-size:12px;
                               text-transform:uppercase;
@@ -676,7 +676,7 @@ ${SITE_URL}
                           style="
                             padding:16px 8px 8px;
                             border-top:1px solid #dddddd;
-                            color:#b58c42;
+                            color:#c9a227;
                             font-size:20px;
                             font-weight:900;
                           "
@@ -701,7 +701,7 @@ ${SITE_URL}
                         <td
                           align="center"
                           style="
-                            background:#050505;
+                            background:#c9a227;
                             border-radius:8px;
                           "
                         >
@@ -710,7 +710,7 @@ ${SITE_URL}
                             style="
                               display:block;
                               padding:16px 24px;
-                              color:#ffffff;
+                              color:#111111;
                               text-decoration:none;
                               font-size:14px;
                               font-weight:800;
@@ -731,8 +731,8 @@ ${SITE_URL}
                   <td
                     style="
                       padding:25px 34px;
-                      background:#fafafa;
-                      border-top:1px solid #eeeeee;
+                      background:#fdf9ed;
+                      border-top:1px solid #e8d48a;
                     "
                   >
                     <table

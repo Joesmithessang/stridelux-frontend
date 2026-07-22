@@ -96,7 +96,7 @@ function buildStatusEmail(order, status) {
     order.customerName ||
     "Customer";
   const orderUrl =
-    `${SITE_URL}/order-confirmation/${encodeURIComponent(order.orderId)}`;
+    `${SITE_URL}/account/orders/${encodeURIComponent(order.orderId)}`;
 
   const items = Array.isArray(order.items) ? order.items : [];
   const itemRows = items.map(item => {
@@ -178,7 +178,7 @@ ${SITE_URL}
               <table role="presentation" width="100%">
                 <tr>
                   <td style="color:#fff;font-size:27px;font-weight:900;letter-spacing:3px">STRIDELUX</td>
-                  <td align="right" style="color:#d6ad60;font-size:13px;font-weight:800">${info.label}</td>
+                  <td align="right" style="color:#c9a227;font-size:13px;font-weight:800">${info.label}</td>
                 </tr>
               </table>
             </td>
@@ -186,12 +186,12 @@ ${SITE_URL}
 
           <tr>
             <td style="padding:42px 34px 25px">
-              <div style="width:58px;height:58px;line-height:58px;text-align:center;background:#d6ad60;border-radius:50%;font-size:29px;font-weight:800">
+              <div style="width:58px;height:58px;line-height:58px;text-align:center;background:#c9a227;border-radius:50%;font-size:29px;font-weight:800">
                 ${info.icon}
               </div>
               <h1 style="margin:24px 0 13px;font-size:30px;line-height:1.25">
                 ${info.title},
-                <span style="color:#b58c42">${escapeHtml(name)}</span>
+                <span style="color:#c9a227">${escapeHtml(name)}</span>
               </h1>
               <p style="margin:0;color:#5e5e5e;font-size:16px;line-height:1.7">
                 ${info.message}
@@ -224,9 +224,9 @@ ${SITE_URL}
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
                 <thead>
                   <tr>
-                    <th align="left" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">ITEM</th>
-                    <th align="center" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">QTY</th>
-                    <th align="right" style="padding:12px 8px;border-bottom:2px solid #111;color:#555;font-size:12px;letter-spacing:.8px">PRICE</th>
+                    <th align="left" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">ITEM</th>
+                    <th align="center" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">QTY</th>
+                    <th align="right" style="padding:12px 8px;border-bottom:2px solid #c9a227;color:#555;font-size:12px;letter-spacing:.8px">PRICE</th>
                   </tr>
                 </thead>
                 <tbody>${itemRows}</tbody>
@@ -239,7 +239,7 @@ ${SITE_URL}
                 ${discount ? `<tr><td align="right" style="padding:6px 8px;color:#16823a">Discount</td><td align="right" style="padding:6px 8px;color:#16823a">−${money(discount)}</td></tr>` : ""}
                 <tr>
                   <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;font-size:17px;font-weight:900">Total</td>
-                  <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;color:#b58c42;font-size:20px;font-weight:900">${money(total)}</td>
+                  <td align="right" style="padding:16px 8px 8px;border-top:1px solid #ddd;color:#c9a227;font-size:20px;font-weight:900">${money(total)}</td>
                 </tr>
               </table>
             </td>
@@ -249,9 +249,9 @@ ${SITE_URL}
             <td style="padding:0 34px 35px">
               <table role="presentation" width="100%">
                 <tr>
-                  <td align="center" style="background:#050505;border-radius:8px">
+                  <td align="center" style="background:#c9a227;border-radius:8px">
                     <a href="${escapeHtml(orderUrl)}"
-                      style="display:block;padding:16px 24px;color:#fff;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.7px">
+                      style="display:block;padding:16px 24px;color:#111;text-decoration:none;font-size:14px;font-weight:800;letter-spacing:.7px">
                       VIEW YOUR ORDER
                     </a>
                   </td>
