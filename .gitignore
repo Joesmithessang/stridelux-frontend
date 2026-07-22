@@ -17,6 +17,17 @@ lambdas/.lambda-temp
 /terraform/lambda-placeholder
 *.zip
 
+# Terraform — local provider cache and generated plan files
+**/.terraform/*
+!**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+terraform/plan.txt
+terraform/plan_output.txt
+
 # Lambda function node_modules — installed fresh by CI (npm ci --production)
 lambdas/*/node_modules/
 
