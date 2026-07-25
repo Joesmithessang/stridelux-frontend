@@ -1,4 +1,4 @@
-// stridelux-payments-fn
+// stridelux-payments-fn — checkout session, Stripe webhook, coupon validation
 const { SESv2Client, SendEmailCommand } = require("@aws-sdk/client-sesv2");
 const sesClient = new SESv2Client({});
 const SES_FROM  = process.env.SES_FROM_ADDRESS;
