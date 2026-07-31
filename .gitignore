@@ -43,3 +43,7 @@ lambdas/*/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+.scannerwork/
+sonar-scan.log
+coverage/
