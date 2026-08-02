@@ -72,7 +72,36 @@ jobs:
           skip-dirs: 'node_modules,build'
           exit-code: '1'
 
-  # ── Job 1: CI ─────────────────────────────────────────────
+  # ── Job 1: Code Quality ───────────────────────────────────
+  # Static analysis on React source code.
+  # SonarCloud is active. SonarQube Community Edition block
+  # is dormant — uncomment when self-hosted server is ready.
+  # ──────────────────────────────────────────────────────────
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── SonarCloud (active) ──────────────────────────────────────────────────
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # ── SonarQube Community Edition (self-hosted — dormant) ─────────────────
+      # - name: SonarQube Scan
+      #   uses: SonarSource/sonarqube-scan-action@master
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # ── Job 2: CI ─────────────────────────────────────────────
   # Runs on every push and every pull request.
   # Validates that the code compiles and all tests pass.
   # ──────────────────────────────────────────────────────────
@@ -123,7 +152,7 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [ci, security-scan]
+    needs: [ci, security-scan, code-quality]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     # GitHub Environment — lets you add required reviewers or
@@ -211,7 +240,7 @@ jobs:
   deploy-lambdas:
     name: Deploy Lambda Functions
     runs-on: ubuntu-latest
-    needs: [ci, security-scan]
+    needs: [ci, security-scan, code-quality]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
