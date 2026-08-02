@@ -33,7 +33,7 @@ A dual-path service layer (`src/services/`) supports a mock mode for local devel
 | HTTP client | Axios (with JWT interceptor) |
 | Hosting | Amazon S3 (static) + CloudFront (CDN) |
 | CI/CD | GitHub Actions |
-| Code quality | SonarCloud |
+| Code quality | SonarCloud (continuous) + SonarQube Community Edition (on-demand, self-hosted EC2) |
 | Security scanning | Trivy |
 
 ---
@@ -125,6 +125,16 @@ Push → main
         ├── Sync /build → S3 (hashed assets: 1-year cache; index.html: no-cache)
         └── CloudFront invalidation — /* 
 ```
+
+### Code Quality — Dual Analysis Strategy
+
+**SonarCloud (cloud-hosted — active)**
+Runs automatically on every pull request and push to `main`. Quality gate must pass before a PR can be merged. Free for public repositories.
+
+**SonarQube Community Edition (self-hosted — on-demand)**
+Set up on a forked repository of this codebase, backed by a self-hosted GitHub Actions runner on an EC2 instance. The EC2 is not continuously running — it is started on-demand when a targeted scan is required, then stopped. The workflow includes a dormant SonarQube step that can be activated by supplying `SONAR_HOST_URL` in the forked repo and toggling the CI/CD steps.
+
+---
 
 ### Required Secrets
 
