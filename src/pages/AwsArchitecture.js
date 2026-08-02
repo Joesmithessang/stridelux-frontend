@@ -67,16 +67,28 @@ export default function AwsArchitecture() {
           text-align: right;
           color: var(--arch-text-muted);
           font-size: 12px;
-          line-height: 1.9;
+          line-height: 2;
         }
 
-        .arch-header-meta strong {
-          color: var(--arch-text);
+        .arch-header-meta .meta-label {
+          font-size: 9px;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--arch-orange);
           font-weight: 500;
           display: block;
-          font-size: 11px;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
+          margin-bottom: 2px;
+          margin-top: 10px;
+        }
+
+        .arch-header-meta .meta-label:first-child { margin-top: 0; }
+
+        .arch-header-meta .meta-value {
+          color: var(--arch-text);
+          font-weight: 400;
+          font-size: 13px;
+          display: block;
+          line-height: 1.6;
         }
 
         .arch-content {
@@ -226,11 +238,11 @@ export default function AwsArchitecture() {
           <div className="arch-brand-tagline">Premium Footwear &amp; Performance Activewear — E-Commerce Platform</div>
         </div>
         <div className="arch-header-meta">
-          <strong>Designed and Built by</strong>
-          Christian Onwuanaku<br />
-          Joe-Smith Essang<br />
-          <strong>In fulfillment of</strong>
-          Cloud Architecture and Administration (CAA) Capstone Project, Summer 2026
+          <span className="meta-label">Designed &amp; Built by</span>
+          <span className="meta-value">Christian Onwuanaku &amp; Joe-Smith Essang</span>
+          <span className="meta-label">Project</span>
+          <span className="meta-value">Cloud Architecture &amp; Administration</span>
+          <span className="meta-value">Capstone — Summer 2026</span>
         </div>
       </div>
 
@@ -305,8 +317,8 @@ export default function AwsArchitecture() {
               {/* ROW 3: DATA + NOTIFY + MONITOR */}
               <g>
                 <rect x="20" y="388" width="155" height="56" rx="8" fill="#220e0e" stroke="#e07070" strokeWidth="1"/>
-                <text x="98" y="408" textAnchor="middle" fill="#f8dcdc" fontFamily="Barlow Condensed, sans-serif" fontSize="13" fontWeight="700">Amazon SNS / SES</text>
-                <text x="98" y="424" textAnchor="middle" fill="#e07070" fontFamily="Barlow, sans-serif" fontSize="10">Email &amp; SMS Alerts</text>
+                <text x="98" y="408" textAnchor="middle" fill="#f8dcdc" fontFamily="Barlow Condensed, sans-serif" fontSize="13" fontWeight="700">Amazon SES</text>
+                <text x="98" y="424" textAnchor="middle" fill="#e07070" fontFamily="Barlow, sans-serif" fontSize="10">Transactional Email</text>
                 <text x="98" y="436" textAnchor="middle" fill="#e07070" fontFamily="Barlow, sans-serif" fontSize="9" opacity="0.7">Notifications</text>
               </g>
               <g>
@@ -372,19 +384,28 @@ export default function AwsArchitecture() {
           <div className="arch-section-label">Section 02</div>
           <h2>Front-End Architecture</h2>
           <p>
-            StrideLux is a premium online store specialising in exclusive sports footwear and performance activewear —
-            limited-edition sneakers, running shoes, training apparel, and curated accessories from elite global brands.
-            The front-end is built as a single-page application using <strong className="arch-highlight">React.js</strong>,
-            styled with <strong className="arch-highlight">CSS custom properties</strong> for a consistent, themeable design system,
-            and bundled with <strong className="arch-highlight">Create React App</strong> for fast production builds.
-            The compiled static assets — HTML, CSS, and JavaScript bundles — are hosted in an{' '}
-            <strong className="arch-highlight">Amazon S3 bucket</strong> with static website hosting enabled,
-            and delivered globally through <strong className="arch-highlight">Amazon CloudFront</strong>, which acts
-            as the content delivery network (CDN). CloudFront caches assets at over 400 edge locations worldwide,
-            giving every shopper — whether in Lagos, London, or Los Angeles — fast load times regardless of their distance
-            from the origin server. Key pages include a product catalogue with filter and search, individual product detail pages
-            with size guides, a shopping cart, a checkout flow integrated with Stripe for test payments, and a user account
-            dashboard showing past orders and saved items.
+            StrideLux is a premium online store specialising in exclusive sports footwear and performance activewear.
+            The front-end is a single-page application built with{' '}
+            <strong className="arch-highlight">React 19</strong>{' '}
+            and{' '}
+            <strong className="arch-highlight">React Router v7</strong>,
+            styled with a custom CSS design system, and bundled via Create React App for optimised production output.
+            Authentication is handled client-side through{' '}
+            <strong className="arch-highlight">AWS Amplify v6</strong>{' '}
+            against Amazon Cognito, with JWTs automatically attached to API requests via an Axios interceptor.
+          </p>
+          <p>
+            Compiled static assets are hosted in an{' '}
+            <strong className="arch-highlight">Amazon S3 bucket</strong>{' '}
+            and delivered globally through{' '}
+            <strong className="arch-highlight">Amazon CloudFront</strong>.
+            Hashed asset files are cached at the edge for one year; <code>index.html</code> is served with
+            no-cache headers so users always receive the latest build after a deployment.
+          </p>
+          <p>
+            The service layer implements a dual-path pattern — every data operation has a mock branch backed
+            by local seed data and a production branch that calls the live API Gateway. A single environment
+            variable switches between them, enabling full local demonstration without AWS credentials.
           </p>
         </section>
 
@@ -409,18 +430,19 @@ export default function AwsArchitecture() {
             ideal for a startup or mid-size e-commerce platform with variable traffic.{' '}
             <strong className="arch-highlight">Amazon DynamoDB</strong> provides single-digit millisecond reads for product
             catalogue lookups and cart operations, with on-demand capacity that scales automatically without prior planning.{' '}
-            <strong className="arch-highlight">Amazon SNS and SES</strong> send order confirmation emails and SMS shipping
-            updates reliably without managing mail infrastructure. Finally,{' '}
-            <strong className="arch-highlight">Amazon CloudWatch</strong> centralises logs and metrics from Lambda, API
-            Gateway, and DynamoDB, giving the operations team full visibility into errors, latency, and usage trends.
+            <strong className="arch-highlight">Amazon SES</strong>{' '}
+            sends transactional order emails reliably without managing mail infrastructure. Finally,{' '}
+            <strong className="arch-highlight">Amazon CloudWatch</strong>{' '}
+            centralises logs and metrics from Lambda, API Gateway, and DynamoDB, giving the team full
+            visibility into errors, latency, and usage trends.
           </p>
 
           <div className="arch-note">
-            <strong>AWS WAF — Optional Augmentation: </strong>
+            <strong>AWS WAF — Optional Augmentation:</strong>{' '}
             AWS WAF (Web Application Firewall) can be attached to CloudFront to block SQL injection, cross-site scripting,
             and bot traffic at the edge. It adds cost — approximately $5/month plus per-request charges. A cost-benefit
             analysis is recommended before enabling it; for the current stage of deployment, CloudFront's built-in
-            protections may be sufficient.
+            protections are sufficient.
           </div>
         </section>
 
