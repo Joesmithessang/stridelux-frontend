@@ -65,30 +65,19 @@ export default function AwsArchitecture() {
 
         .arch-header-meta {
           text-align: right;
-          color: var(--arch-text-muted);
-          font-size: 12px;
-          line-height: 2;
         }
 
-        .arch-header-meta .meta-label {
-          font-size: 9px;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: var(--arch-orange);
-          font-weight: 500;
-          display: block;
-          margin-bottom: 2px;
-          margin-top: 10px;
-        }
-
-        .arch-header-meta .meta-label:first-child { margin-top: 0; }
-
-        .arch-header-meta .meta-value {
+        .arch-header-meta .meta-names {
           color: var(--arch-text);
-          font-weight: 400;
           font-size: 13px;
-          display: block;
-          line-height: 1.6;
+          font-weight: 400;
+          margin-bottom: 5px;
+        }
+
+        .arch-header-meta .meta-course {
+          color: var(--arch-text-muted);
+          font-size: 11px;
+          letter-spacing: 0.05em;
         }
 
         .arch-content {
@@ -238,11 +227,8 @@ export default function AwsArchitecture() {
           <div className="arch-brand-tagline">Premium Footwear &amp; Performance Activewear — E-Commerce Platform</div>
         </div>
         <div className="arch-header-meta">
-          <span className="meta-label">Designed &amp; Built by</span>
-          <span className="meta-value">Christian Onwuanaku &amp; Joe-Smith Essang</span>
-          <span className="meta-label">Project</span>
-          <span className="meta-value">Cloud Architecture &amp; Administration</span>
-          <span className="meta-value">Capstone — Summer 2026</span>
+          <div className="meta-names">Christian Onwuanaku &amp; Joe-Smith Essang</div>
+          <div className="meta-course">Cloud Architecture &amp; Administration &nbsp;·&nbsp; Capstone &nbsp;·&nbsp; Summer 2026</div>
         </div>
       </div>
 
