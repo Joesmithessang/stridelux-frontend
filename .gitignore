@@ -33,6 +33,7 @@ lambdas/*/node_modules/
 
 # misc
 .DS_Store
+.claude/
 .env
 .env*.local
 .env.local
